@@ -1,0 +1,20 @@
+{
+  "name": "NetPilot V4 Final — Codex Ready",
+  "task_count": 120,
+  "stage_count": 10,
+  "stage_task_counts": {
+    "S0": 12,
+    "S1": 12,
+    "S2": 12,
+    "S3": 12,
+    "S4": 12,
+    "S5": 12,
+    "S6": 12,
+    "S7": 12,
+    "S8": 12,
+    "S9": 12
+  },
+  "first_task": "NP-001",
+  "last_task": "NP-120",
+  "verified": true
+}

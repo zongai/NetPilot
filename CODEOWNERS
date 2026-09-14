@@ -1,0 +1,6 @@
+* @netpilot-core
+/apps/desktop/ @netpilot-ui
+/crates/tun/ @netpilot-network
+/crates/dns/ @netpilot-network
+/crates/protocols/ @netpilot-protocol
+/crates/transports/ @netpilot-protocol

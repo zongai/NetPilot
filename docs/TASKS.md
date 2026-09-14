@@ -1,0 +1,122 @@
+# NetPilot V4 Task Index
+
+- NP-001 — S0 — workspace — Repository baseline and workspace layout
+- NP-002 — S0 — toolchain — Pin stable Rust toolchain and formatting policy
+- NP-003 — S0 — agent-rules — Codex/agent operating rules
+- NP-004 — S0 — architecture — Architecture and ownership boundaries
+- NP-005 — S0 — security — Security baseline and secret-redaction policy
+- NP-006 — S0 — errors — Error taxonomy and propagation conventions
+- NP-007 — S0 — logging — Structured logging and redaction baseline
+- NP-008 — S0 — testing — Test conventions and fixtures
+- NP-009 — S0 — ci — Windows CI workflow baseline
+- NP-010 — S0 — scripts — Developer and CI PowerShell scripts
+- NP-011 — S0 — docs-index — Documentation and task navigation index
+- NP-012 — S0 — release-gates — Baseline release gates and review checklist
+- NP-013 — S1 — runtime-state — Core runtime state machine
+- NP-014 — S1 — lifecycle — Core startup/shutdown lifecycle
+- NP-015 — S1 — envelope — Versioned IPC envelope
+- NP-016 — S1 — pipe-server — Named Pipe server skeleton
+- NP-017 — S1 — pipe-client — Named Pipe client skeleton
+- NP-018 — S1 — request-router — IPC request routing
+- NP-019 — S1 — events — Server event stream
+- NP-020 — S1 — errors — IPC error mapping
+- NP-021 — S1 — timeouts — IPC timeout and cancellation
+- NP-022 — S1 — auth — Local IPC authorization boundary
+- NP-023 — S1 — versioning — IPC compatibility/version negotiation
+- NP-024 — S1 — health — Core health/readiness endpoint
+- NP-025 — S2 — schema — Canonical configuration schema
+- NP-026 — S2 — loader — YAML/JSON loading
+- NP-027 — S2 — normalizer — Config normalization
+- NP-028 — S2 — validation — Semantic validation
+- NP-029 — S2 — migration — Versioned config migration
+- NP-030 — S2 — proxy-model — Unified proxy profile model
+- NP-031 — S2 — groups — Proxy group model and selection
+- NP-032 — S2 — health — Proxy health checking
+- NP-033 — S2 — lifecycle — Proxy lifecycle manager
+- NP-034 — S2 — endpoint-policy — Endpoint/credential validation
+- NP-035 — S2 — secrets — Secret storage and redaction boundary
+- NP-036 — S2 — runtime-apply — Atomic runtime config apply
+- NP-037 — S3 — model — Rule domain model
+- NP-038 — S3 — parser — Rule parser
+- NP-039 — S3 — domain-match — Domain matching
+- NP-040 — S3 — ip-match — IP/CIDR matching
+- NP-041 — S3 — port-match — Port/protocol matching
+- NP-042 — S3 — process-hook — Process condition hooks
+- NP-043 — S3 — priority — Deterministic rule priority
+- NP-044 — S3 — actions — Rule actions and targets
+- NP-045 — S3 — routing-engine — Routing decision engine
+- NP-046 — S3 — explain — Route explanation
+- NP-047 — S3 — performance — Rule indexing and performance
+- NP-048 — S3 — testkit — Rule fixtures and conformance tests
+- NP-049 — S4 — shell — WinUI application shell
+- NP-050 — S4 — navigation — Navigation and page model
+- NP-051 — S4 — runtime-state — Runtime state binding
+- NP-052 — S4 — proxy-list — Proxy node/group UI
+- NP-053 — S4 — rule-list — Rule list UI
+- NP-054 — S4 — connection-list — Connection inspector list
+- NP-055 — S4 — connection-detail — Connection detail panel
+- NP-056 — S4 — settings — Settings UI
+- NP-057 — S4 — diagnostics — Diagnostics UI
+- NP-058 — S4 — errors — User-facing error model
+- NP-059 — S4 — ipc-service — UI IPC service abstraction
+- NP-060 — S4 — smoke — Desktop smoke test baseline
+- NP-061 — S5 — abstraction — TUN provider abstraction
+- NP-062 — S5 — wintun-spike — Wintun feasibility spike
+- NP-063 — S5 — device-lifecycle — TUN device lifecycle
+- NP-064 — S5 — ip-config — Virtual interface IP configuration
+- NP-065 — S5 — route-policy — Route installation/removal policy
+- NP-066 — S5 — ingress — Packet ingress pipeline
+- NP-067 — S5 — egress — Packet egress pipeline
+- NP-068 — S5 — tcp-intercept — TCP interception path
+- NP-069 — S5 — udp-intercept — UDP interception path
+- NP-070 — S5 — bypass — Local/bypass traffic policy
+- NP-071 — S5 — rollback — Safe rollback and cleanup
+- NP-072 — S5 — windows-e2e — Windows TUN E2E harness
+- NP-073 — S6 — abstraction — DNS resolver abstraction
+- NP-074 — S6 — system — Windows system resolver integration
+- NP-075 — S6 — udp — UDP DNS transport
+- NP-076 — S6 — tcp — TCP DNS transport
+- NP-077 — S6 — tls — DNS-over-TLS
+- NP-078 — S6 — https — DNS-over-HTTPS
+- NP-079 — S6 — cache — Resolver cache
+- NP-080 — S6 — fakeip — Fake-IP model and allocator
+- NP-081 — S6 — routing — DNS routing policy
+- NP-082 — S6 — leak-prevention — DNS leak prevention
+- NP-083 — S6 — observability — DNS metrics and diagnostics
+- NP-084 — S6 — testkit — DNS conformance fixtures
+- NP-085 — S7 — discovery — Windows process discovery
+- NP-086 — S7 — identity — Stable process identity model
+- NP-087 — S7 — path — Executable path attribution
+- NP-088 — S7 — pid — PID lifecycle handling
+- NP-089 — S7 — rule-match — Process-aware rule matching
+- NP-090 — S7 — ruleset-model — RuleSet model
+- NP-091 — S7 — loader — RuleSet loader
+- NP-092 — S7 — subscription — Remote subscription lifecycle
+- NP-093 — S7 — cache — RuleSet cache and freshness
+- NP-094 — S7 — signature — Integrity/signature verification
+- NP-095 — S7 — update — Atomic RuleSet update
+- NP-096 — S7 — e2e — Process/RuleSet integration tests
+- NP-097 — S8 — connection-model — Connection event model
+- NP-098 — S8 — manager — Connection manager
+- NP-099 — S8 — metadata — Metadata extraction
+- NP-100 — S8 — lifecycle — Connection lifecycle tracking
+- NP-101 — S8 — log — Structured connection logging
+- NP-102 — S8 — inspector-contract — Inspector API contract
+- NP-103 — S8 — probes — Network diagnostics probes
+- NP-104 — S8 — report — Diagnostics report model
+- NP-105 — S8 — script-api — Script/module API boundary
+- NP-106 — S8 — sandbox — Script sandboxing model
+- NP-107 — S8 — limits — Script resource limits
+- NP-108 — S8 — tests — Inspector and script testkit
+- NP-109 — S9 — abstractions — Protocol and transport abstractions
+- NP-110 — S9 — capabilities — Capability, endpoint and credential models
+- NP-111 — S9 — parsers — Protocol URI and subscription parsers
+- NP-112 — S9 — adapter-manager — Adapter manager and lifecycle
+- NP-113 — S9 — http-socks5 — HTTP/HTTPS and SOCKS5 adapters
+- NP-114 — S9 — shadowsocks — Shadowsocks and UDP support
+- NP-115 — S9 — shadowsocks-2022 — Shadowsocks 2022 compatibility
+- NP-116 — S9 — shadowsocksr — ShadowsocksR legacy compatibility
+- NP-117 — S9 — vmess — VMess adapter
+- NP-118 — S9 — vless-tls — VLESS and TLS
+- NP-119 — S9 — vless-reality-vision — VLESS + REALITY + Vision
+- NP-120 — S9 — trojan-transports — Trojan and transport compatibility matrix

@@ -1,0 +1,1082 @@
+{
+  "nodes": [
+    {
+      "id": "NP-001",
+      "stage": "S0",
+      "area": "workspace"
+    },
+    {
+      "id": "NP-002",
+      "stage": "S0",
+      "area": "toolchain"
+    },
+    {
+      "id": "NP-003",
+      "stage": "S0",
+      "area": "agent-rules"
+    },
+    {
+      "id": "NP-004",
+      "stage": "S0",
+      "area": "architecture"
+    },
+    {
+      "id": "NP-005",
+      "stage": "S0",
+      "area": "security"
+    },
+    {
+      "id": "NP-006",
+      "stage": "S0",
+      "area": "errors"
+    },
+    {
+      "id": "NP-007",
+      "stage": "S0",
+      "area": "logging"
+    },
+    {
+      "id": "NP-008",
+      "stage": "S0",
+      "area": "testing"
+    },
+    {
+      "id": "NP-009",
+      "stage": "S0",
+      "area": "ci"
+    },
+    {
+      "id": "NP-010",
+      "stage": "S0",
+      "area": "scripts"
+    },
+    {
+      "id": "NP-011",
+      "stage": "S0",
+      "area": "docs-index"
+    },
+    {
+      "id": "NP-012",
+      "stage": "S0",
+      "area": "release-gates"
+    },
+    {
+      "id": "NP-013",
+      "stage": "S1",
+      "area": "runtime-state"
+    },
+    {
+      "id": "NP-014",
+      "stage": "S1",
+      "area": "lifecycle"
+    },
+    {
+      "id": "NP-015",
+      "stage": "S1",
+      "area": "envelope"
+    },
+    {
+      "id": "NP-016",
+      "stage": "S1",
+      "area": "pipe-server"
+    },
+    {
+      "id": "NP-017",
+      "stage": "S1",
+      "area": "pipe-client"
+    },
+    {
+      "id": "NP-018",
+      "stage": "S1",
+      "area": "request-router"
+    },
+    {
+      "id": "NP-019",
+      "stage": "S1",
+      "area": "events"
+    },
+    {
+      "id": "NP-020",
+      "stage": "S1",
+      "area": "errors"
+    },
+    {
+      "id": "NP-021",
+      "stage": "S1",
+      "area": "timeouts"
+    },
+    {
+      "id": "NP-022",
+      "stage": "S1",
+      "area": "auth"
+    },
+    {
+      "id": "NP-023",
+      "stage": "S1",
+      "area": "versioning"
+    },
+    {
+      "id": "NP-024",
+      "stage": "S1",
+      "area": "health"
+    },
+    {
+      "id": "NP-025",
+      "stage": "S2",
+      "area": "schema"
+    },
+    {
+      "id": "NP-026",
+      "stage": "S2",
+      "area": "loader"
+    },
+    {
+      "id": "NP-027",
+      "stage": "S2",
+      "area": "normalizer"
+    },
+    {
+      "id": "NP-028",
+      "stage": "S2",
+      "area": "validation"
+    },
+    {
+      "id": "NP-029",
+      "stage": "S2",
+      "area": "migration"
+    },
+    {
+      "id": "NP-030",
+      "stage": "S2",
+      "area": "proxy-model"
+    },
+    {
+      "id": "NP-031",
+      "stage": "S2",
+      "area": "groups"
+    },
+    {
+      "id": "NP-032",
+      "stage": "S2",
+      "area": "health"
+    },
+    {
+      "id": "NP-033",
+      "stage": "S2",
+      "area": "lifecycle"
+    },
+    {
+      "id": "NP-034",
+      "stage": "S2",
+      "area": "endpoint-policy"
+    },
+    {
+      "id": "NP-035",
+      "stage": "S2",
+      "area": "secrets"
+    },
+    {
+      "id": "NP-036",
+      "stage": "S2",
+      "area": "runtime-apply"
+    },
+    {
+      "id": "NP-037",
+      "stage": "S3",
+      "area": "model"
+    },
+    {
+      "id": "NP-038",
+      "stage": "S3",
+      "area": "parser"
+    },
+    {
+      "id": "NP-039",
+      "stage": "S3",
+      "area": "domain-match"
+    },
+    {
+      "id": "NP-040",
+      "stage": "S3",
+      "area": "ip-match"
+    },
+    {
+      "id": "NP-041",
+      "stage": "S3",
+      "area": "port-match"
+    },
+    {
+      "id": "NP-042",
+      "stage": "S3",
+      "area": "process-hook"
+    },
+    {
+      "id": "NP-043",
+      "stage": "S3",
+      "area": "priority"
+    },
+    {
+      "id": "NP-044",
+      "stage": "S3",
+      "area": "actions"
+    },
+    {
+      "id": "NP-045",
+      "stage": "S3",
+      "area": "routing-engine"
+    },
+    {
+      "id": "NP-046",
+      "stage": "S3",
+      "area": "explain"
+    },
+    {
+      "id": "NP-047",
+      "stage": "S3",
+      "area": "performance"
+    },
+    {
+      "id": "NP-048",
+      "stage": "S3",
+      "area": "testkit"
+    },
+    {
+      "id": "NP-049",
+      "stage": "S4",
+      "area": "shell"
+    },
+    {
+      "id": "NP-050",
+      "stage": "S4",
+      "area": "navigation"
+    },
+    {
+      "id": "NP-051",
+      "stage": "S4",
+      "area": "runtime-state"
+    },
+    {
+      "id": "NP-052",
+      "stage": "S4",
+      "area": "proxy-list"
+    },
+    {
+      "id": "NP-053",
+      "stage": "S4",
+      "area": "rule-list"
+    },
+    {
+      "id": "NP-054",
+      "stage": "S4",
+      "area": "connection-list"
+    },
+    {
+      "id": "NP-055",
+      "stage": "S4",
+      "area": "connection-detail"
+    },
+    {
+      "id": "NP-056",
+      "stage": "S4",
+      "area": "settings"
+    },
+    {
+      "id": "NP-057",
+      "stage": "S4",
+      "area": "diagnostics"
+    },
+    {
+      "id": "NP-058",
+      "stage": "S4",
+      "area": "errors"
+    },
+    {
+      "id": "NP-059",
+      "stage": "S4",
+      "area": "ipc-service"
+    },
+    {
+      "id": "NP-060",
+      "stage": "S4",
+      "area": "smoke"
+    },
+    {
+      "id": "NP-061",
+      "stage": "S5",
+      "area": "abstraction"
+    },
+    {
+      "id": "NP-062",
+      "stage": "S5",
+      "area": "wintun-spike"
+    },
+    {
+      "id": "NP-063",
+      "stage": "S5",
+      "area": "device-lifecycle"
+    },
+    {
+      "id": "NP-064",
+      "stage": "S5",
+      "area": "ip-config"
+    },
+    {
+      "id": "NP-065",
+      "stage": "S5",
+      "area": "route-policy"
+    },
+    {
+      "id": "NP-066",
+      "stage": "S5",
+      "area": "ingress"
+    },
+    {
+      "id": "NP-067",
+      "stage": "S5",
+      "area": "egress"
+    },
+    {
+      "id": "NP-068",
+      "stage": "S5",
+      "area": "tcp-intercept"
+    },
+    {
+      "id": "NP-069",
+      "stage": "S5",
+      "area": "udp-intercept"
+    },
+    {
+      "id": "NP-070",
+      "stage": "S5",
+      "area": "bypass"
+    },
+    {
+      "id": "NP-071",
+      "stage": "S5",
+      "area": "rollback"
+    },
+    {
+      "id": "NP-072",
+      "stage": "S5",
+      "area": "windows-e2e"
+    },
+    {
+      "id": "NP-073",
+      "stage": "S6",
+      "area": "abstraction"
+    },
+    {
+      "id": "NP-074",
+      "stage": "S6",
+      "area": "system"
+    },
+    {
+      "id": "NP-075",
+      "stage": "S6",
+      "area": "udp"
+    },
+    {
+      "id": "NP-076",
+      "stage": "S6",
+      "area": "tcp"
+    },
+    {
+      "id": "NP-077",
+      "stage": "S6",
+      "area": "tls"
+    },
+    {
+      "id": "NP-078",
+      "stage": "S6",
+      "area": "https"
+    },
+    {
+      "id": "NP-079",
+      "stage": "S6",
+      "area": "cache"
+    },
+    {
+      "id": "NP-080",
+      "stage": "S6",
+      "area": "fakeip"
+    },
+    {
+      "id": "NP-081",
+      "stage": "S6",
+      "area": "routing"
+    },
+    {
+      "id": "NP-082",
+      "stage": "S6",
+      "area": "leak-prevention"
+    },
+    {
+      "id": "NP-083",
+      "stage": "S6",
+      "area": "observability"
+    },
+    {
+      "id": "NP-084",
+      "stage": "S6",
+      "area": "testkit"
+    },
+    {
+      "id": "NP-085",
+      "stage": "S7",
+      "area": "discovery"
+    },
+    {
+      "id": "NP-086",
+      "stage": "S7",
+      "area": "identity"
+    },
+    {
+      "id": "NP-087",
+      "stage": "S7",
+      "area": "path"
+    },
+    {
+      "id": "NP-088",
+      "stage": "S7",
+      "area": "pid"
+    },
+    {
+      "id": "NP-089",
+      "stage": "S7",
+      "area": "rule-match"
+    },
+    {
+      "id": "NP-090",
+      "stage": "S7",
+      "area": "ruleset-model"
+    },
+    {
+      "id": "NP-091",
+      "stage": "S7",
+      "area": "loader"
+    },
+    {
+      "id": "NP-092",
+      "stage": "S7",
+      "area": "subscription"
+    },
+    {
+      "id": "NP-093",
+      "stage": "S7",
+      "area": "cache"
+    },
+    {
+      "id": "NP-094",
+      "stage": "S7",
+      "area": "signature"
+    },
+    {
+      "id": "NP-095",
+      "stage": "S7",
+      "area": "update"
+    },
+    {
+      "id": "NP-096",
+      "stage": "S7",
+      "area": "e2e"
+    },
+    {
+      "id": "NP-097",
+      "stage": "S8",
+      "area": "connection-model"
+    },
+    {
+      "id": "NP-098",
+      "stage": "S8",
+      "area": "manager"
+    },
+    {
+      "id": "NP-099",
+      "stage": "S8",
+      "area": "metadata"
+    },
+    {
+      "id": "NP-100",
+      "stage": "S8",
+      "area": "lifecycle"
+    },
+    {
+      "id": "NP-101",
+      "stage": "S8",
+      "area": "log"
+    },
+    {
+      "id": "NP-102",
+      "stage": "S8",
+      "area": "inspector-contract"
+    },
+    {
+      "id": "NP-103",
+      "stage": "S8",
+      "area": "probes"
+    },
+    {
+      "id": "NP-104",
+      "stage": "S8",
+      "area": "report"
+    },
+    {
+      "id": "NP-105",
+      "stage": "S8",
+      "area": "script-api"
+    },
+    {
+      "id": "NP-106",
+      "stage": "S8",
+      "area": "sandbox"
+    },
+    {
+      "id": "NP-107",
+      "stage": "S8",
+      "area": "limits"
+    },
+    {
+      "id": "NP-108",
+      "stage": "S8",
+      "area": "tests"
+    },
+    {
+      "id": "NP-109",
+      "stage": "S9",
+      "area": "abstractions"
+    },
+    {
+      "id": "NP-110",
+      "stage": "S9",
+      "area": "capabilities"
+    },
+    {
+      "id": "NP-111",
+      "stage": "S9",
+      "area": "parsers"
+    },
+    {
+      "id": "NP-112",
+      "stage": "S9",
+      "area": "adapter-manager"
+    },
+    {
+      "id": "NP-113",
+      "stage": "S9",
+      "area": "http-socks5"
+    },
+    {
+      "id": "NP-114",
+      "stage": "S9",
+      "area": "shadowsocks"
+    },
+    {
+      "id": "NP-115",
+      "stage": "S9",
+      "area": "shadowsocks-2022"
+    },
+    {
+      "id": "NP-116",
+      "stage": "S9",
+      "area": "shadowsocksr"
+    },
+    {
+      "id": "NP-117",
+      "stage": "S9",
+      "area": "vmess"
+    },
+    {
+      "id": "NP-118",
+      "stage": "S9",
+      "area": "vless-tls"
+    },
+    {
+      "id": "NP-119",
+      "stage": "S9",
+      "area": "vless-reality-vision"
+    },
+    {
+      "id": "NP-120",
+      "stage": "S9",
+      "area": "trojan-transports"
+    }
+  ],
+  "edges": [
+    {
+      "from": "NP-001",
+      "to": "NP-002"
+    },
+    {
+      "from": "NP-002",
+      "to": "NP-003"
+    },
+    {
+      "from": "NP-003",
+      "to": "NP-004"
+    },
+    {
+      "from": "NP-004",
+      "to": "NP-005"
+    },
+    {
+      "from": "NP-005",
+      "to": "NP-006"
+    },
+    {
+      "from": "NP-006",
+      "to": "NP-007"
+    },
+    {
+      "from": "NP-007",
+      "to": "NP-008"
+    },
+    {
+      "from": "NP-008",
+      "to": "NP-009"
+    },
+    {
+      "from": "NP-009",
+      "to": "NP-010"
+    },
+    {
+      "from": "NP-010",
+      "to": "NP-011"
+    },
+    {
+      "from": "NP-011",
+      "to": "NP-012"
+    },
+    {
+      "from": "NP-012",
+      "to": "NP-013"
+    },
+    {
+      "from": "NP-013",
+      "to": "NP-014"
+    },
+    {
+      "from": "NP-014",
+      "to": "NP-015"
+    },
+    {
+      "from": "NP-015",
+      "to": "NP-016"
+    },
+    {
+      "from": "NP-016",
+      "to": "NP-017"
+    },
+    {
+      "from": "NP-017",
+      "to": "NP-018"
+    },
+    {
+      "from": "NP-018",
+      "to": "NP-019"
+    },
+    {
+      "from": "NP-019",
+      "to": "NP-020"
+    },
+    {
+      "from": "NP-020",
+      "to": "NP-021"
+    },
+    {
+      "from": "NP-021",
+      "to": "NP-022"
+    },
+    {
+      "from": "NP-022",
+      "to": "NP-023"
+    },
+    {
+      "from": "NP-023",
+      "to": "NP-024"
+    },
+    {
+      "from": "NP-024",
+      "to": "NP-025"
+    },
+    {
+      "from": "NP-025",
+      "to": "NP-026"
+    },
+    {
+      "from": "NP-026",
+      "to": "NP-027"
+    },
+    {
+      "from": "NP-027",
+      "to": "NP-028"
+    },
+    {
+      "from": "NP-028",
+      "to": "NP-029"
+    },
+    {
+      "from": "NP-029",
+      "to": "NP-030"
+    },
+    {
+      "from": "NP-030",
+      "to": "NP-031"
+    },
+    {
+      "from": "NP-031",
+      "to": "NP-032"
+    },
+    {
+      "from": "NP-032",
+      "to": "NP-033"
+    },
+    {
+      "from": "NP-033",
+      "to": "NP-034"
+    },
+    {
+      "from": "NP-034",
+      "to": "NP-035"
+    },
+    {
+      "from": "NP-035",
+      "to": "NP-036"
+    },
+    {
+      "from": "NP-036",
+      "to": "NP-037"
+    },
+    {
+      "from": "NP-037",
+      "to": "NP-038"
+    },
+    {
+      "from": "NP-038",
+      "to": "NP-039"
+    },
+    {
+      "from": "NP-039",
+      "to": "NP-040"
+    },
+    {
+      "from": "NP-040",
+      "to": "NP-041"
+    },
+    {
+      "from": "NP-041",
+      "to": "NP-042"
+    },
+    {
+      "from": "NP-042",
+      "to": "NP-043"
+    },
+    {
+      "from": "NP-043",
+      "to": "NP-044"
+    },
+    {
+      "from": "NP-044",
+      "to": "NP-045"
+    },
+    {
+      "from": "NP-045",
+      "to": "NP-046"
+    },
+    {
+      "from": "NP-046",
+      "to": "NP-047"
+    },
+    {
+      "from": "NP-047",
+      "to": "NP-048"
+    },
+    {
+      "from": "NP-048",
+      "to": "NP-049"
+    },
+    {
+      "from": "NP-049",
+      "to": "NP-050"
+    },
+    {
+      "from": "NP-050",
+      "to": "NP-051"
+    },
+    {
+      "from": "NP-051",
+      "to": "NP-052"
+    },
+    {
+      "from": "NP-052",
+      "to": "NP-053"
+    },
+    {
+      "from": "NP-053",
+      "to": "NP-054"
+    },
+    {
+      "from": "NP-054",
+      "to": "NP-055"
+    },
+    {
+      "from": "NP-055",
+      "to": "NP-056"
+    },
+    {
+      "from": "NP-056",
+      "to": "NP-057"
+    },
+    {
+      "from": "NP-057",
+      "to": "NP-058"
+    },
+    {
+      "from": "NP-058",
+      "to": "NP-059"
+    },
+    {
+      "from": "NP-059",
+      "to": "NP-060"
+    },
+    {
+      "from": "NP-060",
+      "to": "NP-061"
+    },
+    {
+      "from": "NP-061",
+      "to": "NP-062"
+    },
+    {
+      "from": "NP-062",
+      "to": "NP-063"
+    },
+    {
+      "from": "NP-063",
+      "to": "NP-064"
+    },
+    {
+      "from": "NP-064",
+      "to": "NP-065"
+    },
+    {
+      "from": "NP-065",
+      "to": "NP-066"
+    },
+    {
+      "from": "NP-066",
+      "to": "NP-067"
+    },
+    {
+      "from": "NP-067",
+      "to": "NP-068"
+    },
+    {
+      "from": "NP-068",
+      "to": "NP-069"
+    },
+    {
+      "from": "NP-069",
+      "to": "NP-070"
+    },
+    {
+      "from": "NP-070",
+      "to": "NP-071"
+    },
+    {
+      "from": "NP-071",
+      "to": "NP-072"
+    },
+    {
+      "from": "NP-072",
+      "to": "NP-073"
+    },
+    {
+      "from": "NP-073",
+      "to": "NP-074"
+    },
+    {
+      "from": "NP-074",
+      "to": "NP-075"
+    },
+    {
+      "from": "NP-075",
+      "to": "NP-076"
+    },
+    {
+      "from": "NP-076",
+      "to": "NP-077"
+    },
+    {
+      "from": "NP-077",
+      "to": "NP-078"
+    },
+    {
+      "from": "NP-078",
+      "to": "NP-079"
+    },
+    {
+      "from": "NP-079",
+      "to": "NP-080"
+    },
+    {
+      "from": "NP-080",
+      "to": "NP-081"
+    },
+    {
+      "from": "NP-081",
+      "to": "NP-082"
+    },
+    {
+      "from": "NP-082",
+      "to": "NP-083"
+    },
+    {
+      "from": "NP-083",
+      "to": "NP-084"
+    },
+    {
+      "from": "NP-084",
+      "to": "NP-085"
+    },
+    {
+      "from": "NP-085",
+      "to": "NP-086"
+    },
+    {
+      "from": "NP-086",
+      "to": "NP-087"
+    },
+    {
+      "from": "NP-087",
+      "to": "NP-088"
+    },
+    {
+      "from": "NP-088",
+      "to": "NP-089"
+    },
+    {
+      "from": "NP-089",
+      "to": "NP-090"
+    },
+    {
+      "from": "NP-090",
+      "to": "NP-091"
+    },
+    {
+      "from": "NP-091",
+      "to": "NP-092"
+    },
+    {
+      "from": "NP-092",
+      "to": "NP-093"
+    },
+    {
+      "from": "NP-093",
+      "to": "NP-094"
+    },
+    {
+      "from": "NP-094",
+      "to": "NP-095"
+    },
+    {
+      "from": "NP-095",
+      "to": "NP-096"
+    },
+    {
+      "from": "NP-096",
+      "to": "NP-097"
+    },
+    {
+      "from": "NP-097",
+      "to": "NP-098"
+    },
+    {
+      "from": "NP-098",
+      "to": "NP-099"
+    },
+    {
+      "from": "NP-099",
+      "to": "NP-100"
+    },
+    {
+      "from": "NP-100",
+      "to": "NP-101"
+    },
+    {
+      "from": "NP-101",
+      "to": "NP-102"
+    },
+    {
+      "from": "NP-102",
+      "to": "NP-103"
+    },
+    {
+      "from": "NP-103",
+      "to": "NP-104"
+    },
+    {
+      "from": "NP-104",
+      "to": "NP-105"
+    },
+    {
+      "from": "NP-105",
+      "to": "NP-106"
+    },
+    {
+      "from": "NP-106",
+      "to": "NP-107"
+    },
+    {
+      "from": "NP-107",
+      "to": "NP-108"
+    },
+    {
+      "from": "NP-108",
+      "to": "NP-109"
+    },
+    {
+      "from": "NP-109",
+      "to": "NP-110"
+    },
+    {
+      "from": "NP-110",
+      "to": "NP-111"
+    },
+    {
+      "from": "NP-111",
+      "to": "NP-112"
+    },
+    {
+      "from": "NP-112",
+      "to": "NP-113"
+    },
+    {
+      "from": "NP-113",
+      "to": "NP-114"
+    },
+    {
+      "from": "NP-114",
+      "to": "NP-115"
+    },
+    {
+      "from": "NP-115",
+      "to": "NP-116"
+    },
+    {
+      "from": "NP-116",
+      "to": "NP-117"
+    },
+    {
+      "from": "NP-117",
+      "to": "NP-118"
+    },
+    {
+      "from": "NP-118",
+      "to": "NP-119"
+    },
+    {
+      "from": "NP-119",
+      "to": "NP-120"
+    }
+  ]
+}

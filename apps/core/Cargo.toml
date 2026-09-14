@@ -1,0 +1,8 @@
+[package]
+name="netpilot-core"
+version="0.1.0"
+edition="2021"
+
+[[bin]]
+name="netpilot-core"
+path="src/main.rs"
