@@ -16,6 +16,9 @@ netpilot-routing = { path = "../routing" }
 netpilot-outbound = { path = "../outbound" }
 netpilot-tun = { path = "../tun", features = ["wintun-native"] }
 netpilot-dns = { path = "../dns" }
+netpilot-os-route = { path = "../os-route" }
+netpilot-netstack = { path = "../netstack" }
+netpilot-transport-reality = { path = "../transports/reality" }
 
 [lints]
 workspace = true

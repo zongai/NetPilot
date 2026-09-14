@@ -1,0 +1,13 @@
+[package]
+name = "netpilot-netstack"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+repository.workspace = true
+description = "Userspace IPv4/TCP/UDP stack for TUN packet path"
+
+[lib]
+path = "src/lib.rs"
+
+[lints]
+workspace = true

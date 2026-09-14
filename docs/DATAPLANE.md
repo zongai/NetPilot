@@ -1,56 +1,44 @@
-# Data plane (Wintun / outbound / rules→traffic)
+# Data plane
 
 ## Components
 
 | Crate | Role |
 |-------|------|
-| `netpilot-os-wintun` | Dynamic `wintun.dll` load + full session FFI (create/open adapter, packet RX/TX) |
-| `netpilot-tun` | `WintunSession` lifecycle; native packet IO when DLL present |
-| `netpilot-outbound` | Direct / SOCKS5 / HTTP CONNECT / Trojan / VLESS / Shadowsocks dialers |
-| `netpilot-engine` | Profiles + rules + tunnel control + `route_and_dial` |
+| `netpilot-os-wintun` | Dynamic `wintun.dll` FFI + packet IO |
+| `netpilot-os-route` | System route inject/rollback (Windows IP Helper; logical elsewhere) |
+| `netpilot-netstack` | Userspace IPv4/TCP/UDP parse, SYN-ACK, connection table |
+| `netpilot-outbound` | Direct / SOCKS5 / HTTP / Trojan / VLESS / VMess / Shadowsocks |
+| `netpilot-transport-reality` | REALITY config + uTLS-style ClientHello fingerprints |
+| `netpilot-engine` | Rules → dial, TUN, routes, netstack, SOCKS inbound |
 
-## IPC (Core)
+## IPC
 
 | Operation | Purpose |
 |-----------|---------|
-| `rules.load` / `rules.decide` | Load Clash-style rules; decide outbound |
-| `proxy.upsert` / `proxy.list` / `proxy.select` | Manage nodes used by dial path |
-| `traffic.route_dial` | Decide + dial (probe); returns peer/elapsed |
-| `tunnel.start` / `tunnel.stop` / `tunnel.status` | Wintun logical/native session |
-| `outbound.tcp_probe` | Raw TCP connect probe |
-| `tun.wintun_probe` | DLL + export presence |
+| `routes.inject` | Full-tunnel plan + optional proxy /32 bypass |
+| `routes.rollback` | Remove applied routes |
+| `netstack.stats` | packets_in/out, syns, connections |
+| `reality.fingerprint` | Build ClientHello template; return digest |
+| `traffic.route_dial` | Decide + dial |
+| `tunnel.*` / `inbound.socks_*` / `proxy.*` | As before |
 
-## Flow
+## Route injection
 
 ```text
-Client request (host, port)
-  → TrafficEngine.decide (rules or manual select)
-  → dial_outbound (DIRECT | REJECT | profile id)
-  → SOCKS5 / HTTP / Trojan+TLS / VLESS+TLS / SS AEAD / Direct TCP
+optional: proxy_server/32 → physical_gateway (keep path to node)
+default 0.0.0.0/0 → tun_gateway (metric 5)
 ```
 
-Subscription `subscription.update` feeds parsed `ProxyProfile`s into the engine automatically.
+Windows uses `CreateIpForwardEntry2` / `DeleteIpForwardEntry2`. Requires elevation.
 
-## Windows requirements for native TUN
+## Userspace stack
 
-1. Place signed `wintun.dll` next to `netpilot-core.exe`
-2. Run Core elevated (adapter create)
-3. `tunnel.start` → `native: true` when session opens successfully
+TUN IPv4 packet → parse → TCP SYN generates SYN-ACK + conn table entry → engine maps flow to outbound name from rules. Full bidirectional L7 relay over TUN still pairs with outbound streams in subsequent work; SOCKS inbound remains the primary userspace path.
 
-Without the DLL, tunnel still enters logical `SessionRunning` for control-plane tests.
+## VMess
 
-## TLS
+AEAD request header (auth id + encrypted length/body) via `netpilot-protocol-vmess`, dialed by `outbound::dial_vmess` (optional TLS).
 
-`netpilot-outbound` defaults to `tls-rustls` for Trojan/VLESS. REALITY full fingerprint is config-complete; production uTLS may be added later.
+## REALITY fingerprints
 
-## Local SOCKS5 inbound
-
-| Operation | Purpose |
-|-----------|---------|
-| `inbound.socks_start` | `{ "port": 0 }` → listen `127.0.0.1:port` |
-| `inbound.socks_stop` | Stop listener |
-| `inbound.socks_status` | accepted / active / bytes |
-
-Flow: SOCKS5 client → Core inbound → `rules.decide` → `dial_outbound` → bidirectional relay.
-
-This provides a usable userspace path without a full TUN TCP/IP stack. Combine with system proxy settings or browser SOCKS configuration.
+Profiles: chrome / firefox / safari / ios / android / edge. Templates set cipher suite + extension **order** for ClientHello. Not a complete X25519 REALITY crypto handshake.

@@ -11,6 +11,10 @@ use netpilot_outbound::{dial_outbound, DialReport, DialRequest, OutboundError, O
 use netpilot_proxy::ProxyProfile;
 use netpilot_routing::{parse_rules, RouteRequest, RoutingEngine, RuleIndex};
 use netpilot_tun::{TunConfig, TunError, WintunSession, WintunSessionState, WintunTunProvider};
+use netpilot_os_route::RoutePlan;
+use netpilot_netstack::{NetStack, StackEvent};
+use netpilot_transport_reality::{Fingerprint, RealityConfig, RealitySession};
+use std::net::Ipv4Addr;
 
 pub use inbound::{start_socks_inbound, InboundStats, SocksInbound};
 
@@ -89,6 +93,10 @@ pub struct TrafficEngine {
     dial_timeout: Duration,
     stats: EngineStats,
     inbound: Option<SocksInbound>,
+    route_plan: RoutePlan,
+    netstack: NetStack,
+    physical_gateway: Option<Ipv4Addr>,
+    physical_luid: u64,
 }
 
 impl Default for TrafficEngine {
@@ -110,6 +118,10 @@ impl TrafficEngine {
             dial_timeout: Duration::from_secs(10),
             stats: EngineStats::default(),
             inbound: None,
+            route_plan: RoutePlan::new(),
+            netstack: NetStack::new(),
+            physical_gateway: None,
+            physical_luid: 0,
         }
     }
 
@@ -248,6 +260,7 @@ impl TrafficEngine {
     }
 
     pub fn stop_tunnel(&mut self) -> Result<TunnelStatus, EngineError> {
+        let _ = self.rollback_routes();
         if let Some(mut s) = self.tun_session.take() {
             let _ = s.stop();
         }
@@ -306,6 +319,70 @@ impl TrafficEngine {
 
     pub fn inbound_port(&self) -> Option<u16> {
         self.inbound.as_ref().map(|i| i.port())
+    }
+
+
+    pub fn set_physical_gateway(&mut self, gw: Option<Ipv4Addr>, luid: u64) {
+        self.physical_gateway = gw;
+        self.physical_luid = luid;
+    }
+
+    /// Install system routes for full tunnel; bypasses proxy server via physical GW when set.
+    pub fn inject_routes(
+        &mut self,
+        tun_gateway: Ipv4Addr,
+        tun_luid: u64,
+        proxy_server: Option<Ipv4Addr>,
+    ) -> Result<usize, EngineError> {
+        self.route_plan = RoutePlan::new();
+        self.route_plan.full_tunnel_with_bypass(
+            tun_gateway,
+            tun_luid,
+            proxy_server,
+            self.physical_gateway,
+            self.physical_luid,
+        );
+        self.route_plan
+            .apply_all()
+            .map_err(|e| EngineError::Tun(e.to_string()))
+    }
+
+    pub fn rollback_routes(&mut self) -> Result<usize, EngineError> {
+        self.route_plan
+            .rollback_all()
+            .map_err(|e| EngineError::Tun(e.to_string()))
+    }
+
+    pub fn route_plan_len(&self) -> usize {
+        self.route_plan.desired().len()
+    }
+
+    /// Feed one TUN packet into the userspace stack using current route decision for dst.
+    pub fn handle_tun_packet(&mut self, packet: &[u8]) -> (Vec<Vec<u8>>, Option<StackEvent>) {
+        // Best-effort: decide by destination IP from packet
+        let outbound = if let Ok((hdr, _)) = netpilot_netstack::parse_ipv4(packet) {
+            let dst = netpilot_netstack::addr_str(hdr.dst);
+            self.decide(None, Some(&dst), None).outbound
+        } else {
+            self.selected_outbound.clone().unwrap_or_else(|| "DIRECT".into())
+        };
+        self.netstack.handle_inbound(packet, &outbound)
+    }
+
+    pub fn netstack_stats(&self) -> (u64, u64, u64, usize) {
+        (
+            self.netstack.packets_in,
+            self.netstack.packets_out,
+            self.netstack.syns,
+            self.netstack.conn_count(),
+        )
+    }
+
+    pub fn reality_probe(&self, server_name: &str, fingerprint: &str) -> Result<(String, usize), EngineError> {
+        let cfg = RealityConfig::new(server_name)
+            .with_fingerprint(Fingerprint::parse(fingerprint));
+        let session = RealitySession::open(cfg).map_err(|e| EngineError::State(e))?;
+        Ok((session.digest, session.client_hello.len()))
     }
 
     pub fn stats(&self) -> &EngineStats {

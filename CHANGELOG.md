@@ -95,3 +95,12 @@ First formal release tag. End-to-end task track complete (**NP-001 … NP-120**)
 - Load `wintun.dll` at runtime on Windows (feature-gated)
 - Real rustls / platform TLS sessions behind `TlsTransport`
 - Desktop MSBuild packaging and signed installer
+
+## Unreleased
+
+### Added
+- System route injection (`netpilot-os-route`) with full-tunnel + proxy bypass plan
+- Userspace IPv4/TCP/UDP stack (`netpilot-netstack`) with SYN-ACK and connection table
+- VMess AEAD outbound dialer
+- REALITY uTLS-style ClientHello fingerprint profiles (chrome/firefox/safari/ios/android/edge)
+- IPC: `routes.inject`, `routes.rollback`, `netstack.stats`, `reality.fingerprint`

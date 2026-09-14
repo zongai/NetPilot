@@ -10,6 +10,10 @@ path = "src/lib.rs"
 
 [dependencies]
 netpilot-protocol-common = { path = "../common" }
+sha2 = "0.10"
+md-5 = "0.10"
+aes-gcm = "0.10"
+rand = "0.8"
 
 [lints]
 workspace = true

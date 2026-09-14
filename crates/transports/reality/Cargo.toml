@@ -11,6 +11,8 @@ path = "src/lib.rs"
 [dependencies]
 netpilot-protocol-common = { path = "../../protocols/common" }
 netpilot-transport-tls = { path = "../tls" }
+sha2 = "0.10"
+rand = "0.8"
 
 [lints]
 workspace = true

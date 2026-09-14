@@ -30,6 +30,8 @@ members = [
     "crates/os-wintun",
     "crates/outbound",
     "crates/engine",
+    "crates/os-route",
+    "crates/netstack",
 ]
 
 [workspace.package]

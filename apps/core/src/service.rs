@@ -643,6 +643,112 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
         }
     });
 
+
+    let engine_routes = engine.clone();
+    router.register("routes.inject", move |req| {
+        let payload = req.payload.as_ref();
+        let tun_gw = payload
+            .and_then(|p| p.get("tun_gateway"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("10.0.0.1");
+        let tun_luid = payload
+            .and_then(|p| p.get("tun_luid"))
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        let proxy = payload
+            .and_then(|p| p.get("proxy_server"))
+            .and_then(|v| v.as_str())
+            .and_then(|s| s.parse().ok());
+        let phys_gw = payload
+            .and_then(|p| p.get("physical_gateway"))
+            .and_then(|v| v.as_str())
+            .and_then(|s| s.parse().ok());
+        let phys_luid = payload
+            .and_then(|p| p.get("physical_luid"))
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        let tun_gateway: std::net::Ipv4Addr = tun_gw
+            .parse()
+            .map_err(|_| RouteError::InvalidInput("bad tun_gateway"))?;
+        let mut g = engine_routes
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        g.set_physical_gateway(phys_gw, phys_luid);
+        match g.inject_routes(tun_gateway, tun_luid, proxy) {
+            Ok(n) => Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({
+                        "applied": n,
+                        "planned": g.route_plan_len(),
+                    })),
+            ),
+            Err(e) => err_resp(req, "failed_precondition", e.to_string(), 500),
+        }
+    });
+
+    let engine_rr = engine.clone();
+    router.register("routes.rollback", move |req| {
+        let mut g = engine_rr
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        match g.rollback_routes() {
+            Ok(n) => Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({ "removed": n })),
+            ),
+            Err(e) => err_resp(req, "internal", e.to_string(), 500),
+        }
+    });
+
+    let engine_ns = engine.clone();
+    router.register("netstack.stats", move |req| {
+        let g = engine_ns
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        let (pin, pout, syns, conns) = g.netstack_stats();
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
+                serde_json::json!({
+                    "packets_in": pin,
+                    "packets_out": pout,
+                    "syns": syns,
+                    "connections": conns,
+                }),
+            ),
+        )
+    });
+
+    let engine_real = engine.clone();
+    router.register("reality.fingerprint", move |req| {
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
+        let sni = payload
+            .get("server_name")
+            .and_then(|v| v.as_str())
+            .ok_or(RouteError::InvalidInput("server_name"))?;
+        let fp = payload
+            .get("fingerprint")
+            .and_then(|v| v.as_str())
+            .unwrap_or("chrome");
+        let g = engine_real
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        match g.reality_probe(sni, fp) {
+            Ok((digest, hello_len)) => Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({
+                        "digest": digest,
+                        "client_hello_len": hello_len,
+                        "fingerprint": fp,
+                        "server_name": sni,
+                    })),
+            ),
+            Err(e) => err_resp(req, "invalid_argument", e.to_string(), 400),
+        }
+    });
+
     router.register("outbound.tcp_probe", move |req| {
         let payload = req
             .payload
