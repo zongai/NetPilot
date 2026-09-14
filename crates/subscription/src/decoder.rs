@@ -103,7 +103,10 @@ pub fn decode_base64_bytes(input: &str) -> Result<Vec<u8>, DecodeError> {
             if c == b'=' {
                 *v = 0;
             } else {
-                let pos = table.iter().position(|&x| x == c).ok_or(DecodeError::InvalidAlphabet)?;
+                let pos = table
+                    .iter()
+                    .position(|&x| x == c)
+                    .ok_or(DecodeError::InvalidAlphabet)?;
                 *v = pos as u8;
             }
         }

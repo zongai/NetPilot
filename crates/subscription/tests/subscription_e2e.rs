@@ -1,17 +1,19 @@
 //! NP-144: multi-format airport subscription e2e.
 
-use netpilot_subscription::{
-    run_subscription_pipeline, FilterRule, MockFetcher, RenameRule, SubscriptionFetcher,
-    SubscriptionManager, SubscriptionProfile, FetchRequest, parse_userinfo_header,
-};
 use std::time::Duration;
+
+use netpilot_subscription::{
+    parse_userinfo_header, run_subscription_pipeline, FilterRule, MockFetcher, RenameRule,
+    SubscriptionManager, SubscriptionProfile,
+};
 
 #[test]
 fn e2e_uri_clash_singbox_and_userinfo() {
     let sub = SubscriptionProfile::new("s1", "Airport", "https://airport.example/sub");
     // URI
     let uri_body = "trojan://secret@node.example:443?security=tls&type=ws#HK-URI\n";
-    let r1 = run_subscription_pipeline(&sub, uri_body, &FilterRule::default(), &RenameRule::default());
+    let r1 =
+        run_subscription_pipeline(&sub, uri_body, &FilterRule::default(), &RenameRule::default());
     assert_eq!(r1.profiles.len(), 1);
 
     // Clash
@@ -23,7 +25,8 @@ proxies:
     port: 10086
     uuid: 12345678-1234-1234-1234-123456789abc
 "#;
-    let r2 = run_subscription_pipeline(&sub, clash, &FilterRule::default(), &RenameRule::default());
+    let r2 =
+        run_subscription_pipeline(&sub, clash, &FilterRule::default(), &RenameRule::default());
     assert_eq!(r2.profiles.len(), 1);
 
     // Sing-box

@@ -95,8 +95,8 @@ fn parse_ssr(rest: &str) -> Result<ParsedNode, UriParseError> {
 
 fn parse_vmess(rest: &str) -> Result<ParsedNode, UriParseError> {
     // vmess://base64(json) — minimal: extract add/port/id/ps from json-ish text
-    let json =
-        String::from_utf8(crate::decoder::decode_base64_bytes(rest).unwrap_or_default()).unwrap_or_default();
+    let json = String::from_utf8(crate::decoder::decode_base64_bytes(rest).unwrap_or_default())
+        .unwrap_or_default();
     let server = json_field(&json, "add").unwrap_or_default();
     let port: u16 = json_field(&json, "port")
         .and_then(|p| p.parse().ok())

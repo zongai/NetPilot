@@ -68,7 +68,10 @@ impl SubscriptionManager {
         fetcher: &mut dyn SubscriptionFetcher,
         timeout: Duration,
     ) -> Result<String, SubscriptionError> {
-        let profile = self.profiles.get_mut(id).ok_or(SubscriptionError::NotFound)?;
+        let profile = self
+            .profiles
+            .get_mut(id)
+            .ok_or(SubscriptionError::NotFound)?;
         profile.validate().map_err(SubscriptionError::Profile)?;
         profile.mark_updating();
         let req = FetchRequest::from_profile(profile, timeout);
@@ -77,8 +80,7 @@ impl SubscriptionManager {
 
         match fetcher.fetch(&req) {
             Ok(resp) => {
-                self.cache
-                    .put(id, resp.body.clone(), resp.etag.clone());
+                self.cache.put(id, resp.body.clone(), resp.etag.clone());
                 if let Some(p) = self.profiles.get_mut(id) {
                     p.mark_ready(resp.etag, resp.last_modified);
                 }
@@ -139,7 +141,10 @@ mod tests {
             .unwrap();
         let mut f = MockFetcher::new();
         f.seed("https://x/sub", "v1", Some("e1"));
-        assert_eq!(mgr.update_one("s", &mut f, Duration::from_secs(5)).unwrap(), "v1");
+        assert_eq!(
+            mgr.update_one("s", &mut f, Duration::from_secs(5)).unwrap(),
+            "v1"
+        );
         f.force_status = Some(500);
         assert!(mgr.update_one("s", &mut f, Duration::from_secs(5)).is_err());
         assert_eq!(mgr.cache.get("s").unwrap().body, "v1");

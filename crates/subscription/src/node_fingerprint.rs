@@ -10,10 +10,7 @@ pub fn fingerprint(p: &ProxyProfile) -> String {
         p.server.to_ascii_lowercase(),
         p.port,
         p.uuid.as_deref().unwrap_or(""),
-        p.transport
-            .as_ref()
-            .map(|t| t.as_str())
-            .unwrap_or("tcp")
+        p.transport.as_ref().map(|t| t.as_str()).unwrap_or("tcp")
     );
     for b in material.as_bytes() {
         h ^= *b as u64;
@@ -63,7 +60,11 @@ mod tests {
 
     #[test]
     fn dedup() {
-        let v = vec![sample("a.com", "1"), sample("a.com", "2"), sample("b.com", "3")];
+        let v = vec![
+            sample("a.com", "1"),
+            sample("a.com", "2"),
+            sample("b.com", "3"),
+        ];
         assert_eq!(merge_duplicates(v).len(), 2);
     }
 }

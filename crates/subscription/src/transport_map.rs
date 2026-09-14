@@ -23,13 +23,19 @@ pub fn map_transport_params(params: &HashMap<String, String>) -> Option<Transpor
             }
         }
     }
-    if params.get("security").map(|s| s.eq_ignore_ascii_case("reality")) == Some(true)
+    if params
+        .get("security")
+        .map(|s| s.eq_ignore_ascii_case("reality"))
+        == Some(true)
         || params.contains_key("pbk")
         || params.contains_key("public-key")
     {
         return Some(TransportKind::Reality);
     }
-    if params.get("security").map(|s| s.eq_ignore_ascii_case("tls")) == Some(true)
+    if params
+        .get("security")
+        .map(|s| s.eq_ignore_ascii_case("tls"))
+        == Some(true)
         || params.get("tls").map(|s| s == "true" || s == "1") == Some(true)
     {
         return Some(TransportKind::Tls);

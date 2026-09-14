@@ -68,7 +68,10 @@ fn json_str(obj: &str, key: &str) -> Option<String> {
 
 fn object_to_node(obj: &str) -> Option<ParsedNode> {
     let ty = json_str(obj, "type")?.to_ascii_lowercase();
-    if matches!(ty.as_str(), "direct" | "block" | "dns" | "selector" | "urltest") {
+    if matches!(
+        ty.as_str(),
+        "direct" | "block" | "dns" | "selector" | "urltest"
+    ) {
         return None;
     }
     let server = json_str(obj, "server")?;

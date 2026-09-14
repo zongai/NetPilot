@@ -64,7 +64,8 @@ mod tests {
     fn uri_pipeline() {
         let sub = SubscriptionProfile::new("s1", "Test", "https://example.com/sub");
         let body = "trojan://pass@host.example:443?security=tls#HK-1\n";
-        let r = run_subscription_pipeline(&sub, body, &FilterRule::default(), &RenameRule::default());
+        let r =
+            run_subscription_pipeline(&sub, body, &FilterRule::default(), &RenameRule::default());
         assert_eq!(r.profiles.len(), 1);
         assert_eq!(r.group.members.len(), 1);
     }

@@ -30,7 +30,11 @@ pub fn apply_filters(profiles: Vec<ProxyProfile>, rule: &FilterRule) -> Vec<Prox
 
 fn match_one(p: &ProxyProfile, rule: &FilterRule) -> bool {
     if let Some(ref n) = rule.name_contains {
-        if !p.name.to_ascii_lowercase().contains(&n.to_ascii_lowercase()) {
+        if !p
+            .name
+            .to_ascii_lowercase()
+            .contains(&n.to_ascii_lowercase())
+        {
             return false;
         }
     }
