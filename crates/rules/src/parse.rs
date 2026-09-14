@@ -1,6 +1,6 @@
-//! Rule line parser (NP-038).
+//! Rule line parser (NP-038…NP-044 extensions).
 
-use crate::{RouteDecision, Rule, RuleMatcher};
+use crate::{NetworkProtocol, RouteDecision, Rule, RuleMatcher};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseError {
@@ -21,11 +21,14 @@ impl std::fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
-/// Parse one rule line (Clash-like):
+/// Parse one rule line (Clash-like + port/process/network):
 /// `DOMAIN,example.com,DIRECT`
 /// `DOMAIN-SUFFIX,google.com,PROXY`
 /// `DOMAIN-KEYWORD,ads,REJECT`
 /// `IP-CIDR,10.0.0.0/8,DIRECT`
+/// `PORT,443,PROXY`
+/// `NETWORK,tcp,DIRECT`
+/// `PROCESS-NAME,chrome.exe,PROXY`
 /// `MATCH,PROXY`
 pub fn parse_rule_line(line: &str) -> Result<Option<Rule>, ParseError> {
     let raw = line.trim();
@@ -68,6 +71,32 @@ pub fn parse_rule_line(line: &str) -> Result<Option<Rule>, ParseError> {
             }
             (RuleMatcher::IpCidr(parts[1].to_string()), parts[2])
         }
+        "PORT" => {
+            if parts.len() < 3 {
+                return Err(ParseError::InvalidSyntax(raw.to_string()));
+            }
+            let port: u16 = parts[1]
+                .parse()
+                .map_err(|_| ParseError::InvalidSyntax(raw.to_string()))?;
+            (RuleMatcher::Port(port), parts[2])
+        }
+        "NETWORK" => {
+            if parts.len() < 3 {
+                return Err(ParseError::InvalidSyntax(raw.to_string()));
+            }
+            let proto = NetworkProtocol::parse(parts[1])
+                .ok_or_else(|| ParseError::InvalidSyntax(raw.to_string()))?;
+            (RuleMatcher::Network(proto), parts[2])
+        }
+        "PROCESS-NAME" | "PROCESS" => {
+            if parts.len() < 3 {
+                return Err(ParseError::InvalidSyntax(raw.to_string()));
+            }
+            (
+                RuleMatcher::ProcessName(parts[1].to_ascii_lowercase()),
+                parts[2],
+            )
+        }
         "MATCH" => (RuleMatcher::MatchAll, parts[1]),
         other => return Err(ParseError::UnknownType(other.to_string())),
     };
@@ -76,7 +105,8 @@ pub fn parse_rule_line(line: &str) -> Result<Option<Rule>, ParseError> {
     }
     Ok(Some(Rule {
         matcher,
-        decision: RouteDecision::proxy(outbound),
+        decision: RouteDecision::from_outbound(outbound),
+        priority: 1000,
         source: Some(raw.to_string()),
     }))
 }
@@ -102,6 +132,21 @@ mod tests {
             .unwrap();
         assert_eq!(r.matcher, RuleMatcher::DomainSuffix("google.com".into()));
         assert_eq!(r.decision.outbound, "PROXY");
+    }
+
+    #[test]
+    fn parse_port_process_network() {
+        let r = parse_rule_line("PORT,443,HTTPS").unwrap().unwrap();
+        assert_eq!(r.matcher, RuleMatcher::Port(443));
+        let r = parse_rule_line("PROCESS-NAME,Chrome.EXE,BROWSER")
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            r.matcher,
+            RuleMatcher::ProcessName("chrome.exe".into())
+        );
+        let r = parse_rule_line("NETWORK,udp,U").unwrap().unwrap();
+        assert_eq!(r.matcher, RuleMatcher::Network(NetworkProtocol::Udp));
     }
 
     #[test]
