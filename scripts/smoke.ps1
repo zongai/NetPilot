@@ -1,5 +1,5 @@
-# NetPilot lightweight smoke (NP-002+)
-# Uses pinned toolchain from rust-toolchain.toml. See docs/TOOLCHAIN.md.
+# NetPilot lightweight smoke (NP-010)
+# Faster than full ci.ps1 — check + test only. See docs/TESTING.md.
 $ErrorActionPreference = "Stop"
 
 Write-Host "== toolchain =="

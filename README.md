@@ -65,7 +65,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 ## Task-driven development
 
 Work is split into 120 tasks (NP-001 … NP-120) across stages S0–S9.  
-See `docs/TASKS.md` and `docs/tasks/NP-###.md`.
+See `docs/TASKS.md`, `docs/INDEX.md`, and `docs/tasks/NP-###.md`.
 
 **Agents (Codex and similar):** follow [`AGENTS.md`](AGENTS.md) and [`docs/AGENT_WORKFLOW.md`](docs/AGENT_WORKFLOW.md).
 
@@ -78,4 +78,5 @@ Contributors and agents must:
 
 ## Status
 
-Foundation stage (S0) in progress. Core and protocol crates are workspace skeletons; behavior lands in later NP tasks.
+Foundation stage (**S0**, NP-001…NP-012) complete: toolchain, agent rules, architecture, security, errors, logging, testing, Windows CI, scripts, doc index, release gates.  
+Core and protocol crates remain skeletons; behavior lands in S1+ (NP-013…).

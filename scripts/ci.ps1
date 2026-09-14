@@ -1,6 +1,6 @@
-# NetPilot CI baseline (NP-002+)
-# Requires pinned toolchain from rust-toolchain.toml (1.98.1 + rustfmt + clippy).
-# See docs/TOOLCHAIN.md.
+# NetPilot CI baseline (NP-009/NP-010)
+# Parity with .github/workflows/ci.yml — run on Windows with rust-toolchain.toml.
+# See docs/CI.md and docs/TOOLCHAIN.md.
 $ErrorActionPreference = "Stop"
 
 Write-Host "== toolchain =="
