@@ -62,6 +62,15 @@ pub enum OutboundStream {
     Tls(Box<TlsStream>),
 }
 
+impl std::fmt::Debug for OutboundStream {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Plain(_) => write!(f, "OutboundStream::Plain(..)"),
+            Self::Tls(_) => write!(f, "OutboundStream::Tls(..)"),
+        }
+    }
+}
+
 impl OutboundStream {
     pub fn set_read_timeout(&self, timeout: Option<Duration>) -> std::io::Result<()> {
         match self {
