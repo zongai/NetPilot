@@ -1,4 +1,3 @@
-// NetPilot Desktop shell (NP-049). Network interception stays in Core.
 using Microsoft.UI.Xaml;
 
 namespace NetPilot.Desktop;
@@ -9,12 +8,18 @@ public partial class App : Application
 
     public App()
     {
+        UnhandledException += (_, e) =>
+        {
+            System.Diagnostics.Debug.WriteLine(e.Message);
+            e.Handled = true;
+        };
         InitializeComponent();
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         _window = new MainWindow();
+        _window.Closed += (_, _) => { _window = null; };
         _window.Activate();
     }
 }

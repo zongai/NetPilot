@@ -51,7 +51,7 @@ jobs:
       - name: Publish Desktop GUI (WPF self-contained — full feature shell)
         working-directory: apps/desktop-wpf
         run: |
-          dotnet publish NetPilot.Desktop.Wpf.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o "${{ github.workspace }}/dist/desktop"
+          dotnet publish NetPilot.Desktop.Wpf.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o "${{ github.workspace }}/dist/desktop"
 
       - name: Setup MSBuild (optional WinUI)
         uses: microsoft/setup-msbuild@v2
@@ -72,6 +72,7 @@ jobs:
           $root = Join-Path $env:GITHUB_WORKSPACE "dist/NetPilot-win-x64"
           New-Item -ItemType Directory -Force -Path $root | Out-Null
           Copy-Item "target/release/netpilot-core.exe" -Destination $root
+          Copy-Item "scripts/Start-NetPilot.cmd" -Destination $root -ErrorAction SilentlyContinue
           # Desktop publish output
           $desk = Join-Path $env:GITHUB_WORKSPACE "dist/desktop"
           if (Test-Path $desk) {
