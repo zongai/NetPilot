@@ -25,8 +25,7 @@ pub fn validate_semantic(doc: &ConfigDocument) -> Result<(), ConfigError> {
                 p.id
             )));
         }
-        if p.requires_uuid() && p.uuid.as_ref().map(|u| u.trim().is_empty()).unwrap_or(true)
-        {
+        if p.requires_uuid() && p.uuid.as_ref().map(|u| u.trim().is_empty()).unwrap_or(true) {
             return Err(ConfigError::Semantic(format!(
                 "proxy {}: protocol {:?} requires uuid",
                 p.id, p.protocol

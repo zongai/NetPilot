@@ -137,10 +137,7 @@ impl ProxyProfile {
 
     /// Whether this profile requires UUID-style identity.
     pub fn requires_uuid(&self) -> bool {
-        matches!(
-            self.protocol,
-            ProtocolKind::Vmess | ProtocolKind::Vless
-        )
+        matches!(self.protocol, ProtocolKind::Vmess | ProtocolKind::Vless)
     }
 
     /// Whether password/credential is expected for the protocol.
