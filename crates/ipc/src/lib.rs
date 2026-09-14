@@ -41,6 +41,12 @@ pub const PROTOCOL_VERSION: u32 = 1;
 /// Minimum protocol version this build can accept.
 pub const PROTOCOL_VERSION_MIN: u32 = 1;
 
+/// Operations used by Desktop shell (NP-051+).
+pub const UI_OP_HEALTH_CHECK: &str = "health.check";
+pub const UI_OP_HEALTH_READY: &str = "health.ready";
+pub const UI_OP_RUNTIME_STATE: &str = "runtime.state";
+
+
 /// Envelope direction / role.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
