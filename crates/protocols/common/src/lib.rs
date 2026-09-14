@@ -270,13 +270,13 @@ pub fn compatibility_matrix() -> Vec<CompatEntry> {
         Trojan,
     ] {
         for t in all_t {
-            let supported = match (p, t) {
-                (Http | Https | Socks5, Tcp | Tls) => true,
-                (Shadowsocks | Shadowsocks2022 | ShadowsocksR, Tcp) => true,
-                (Vmess | Vless | Trojan, Tcp | Tls | Websocket | Http2 | Grpc) => true,
-                (Vless, Reality) => true,
-                _ => false,
-            };
+            let supported = matches!(
+                (p, t),
+                (Http | Https | Socks5, Tcp | Tls)
+                    | (Shadowsocks | Shadowsocks2022 | ShadowsocksR, Tcp)
+                    | (Vmess | Vless | Trojan, Tcp | Tls | Websocket | Http2 | Grpc)
+                    | (Vless, Reality)
+            );
             out.push(CompatEntry {
                 protocol: p,
                 transport: t,
