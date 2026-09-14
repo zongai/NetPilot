@@ -33,7 +33,10 @@ impl ServiceControl {
 
 fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> RequestRouter {
     let mut router = RequestRouter::new();
-    let health = HealthStatus::new(runtime_state.as_str(), runtime_state == RuntimeState::Running);
+    let health = HealthStatus::new(
+        runtime_state.as_str(),
+        runtime_state == RuntimeState::Running,
+    );
     register_health_handlers(&mut router, health);
 
     let state = runtime_state;
@@ -105,9 +108,11 @@ fn handle_line(router: &RequestRouter, line: &str) -> String {
         Ok(RouteOutcome::Handled(resp)) => resp
             .to_json()
             .unwrap_or_else(|_| r#"{"status":"error"}"#.into()),
-        Ok(RouteOutcome::NotFound { operation }) => RequestRouter::not_found_response(&req, &operation)
-            .to_json()
-            .unwrap_or_else(|_| r#"{"status":"error"}"#.into()),
+        Ok(RouteOutcome::NotFound { operation }) => {
+            RequestRouter::not_found_response(&req, &operation)
+                .to_json()
+                .unwrap_or_else(|_| r#"{"status":"error"}"#.into())
+        }
         Err(e) => IpcEnvelope::error_response(
             req.request_id,
             req.operation,

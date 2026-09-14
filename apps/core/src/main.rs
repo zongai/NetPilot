@@ -69,7 +69,10 @@ fn main() {
             eprintln!("shutdown failed: {err}");
             std::process::exit(1);
         }
-        eprintln!("netpilot-core state={} (smoke only)", runtime.state().as_str());
+        eprintln!(
+            "netpilot-core state={} (smoke only)",
+            runtime.state().as_str()
+        );
         return;
     }
 
@@ -90,7 +93,11 @@ fn main() {
             .ok()
             .and_then(|s| s.parse().ok())
             .map(Duration::from_secs);
-        run_idle_service(&runtime, control.clone(), idle.or(Some(Duration::from_secs(2))));
+        run_idle_service(
+            &runtime,
+            control.clone(),
+            idle.or(Some(Duration::from_secs(2))),
+        );
     }
 
     if let Err(err) = runtime.shutdown() {
