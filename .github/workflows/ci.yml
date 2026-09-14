@@ -1,4 +1,4 @@
-# NP-009 — Windows CI baseline
+# NP-009 — CI baseline (Windows primary; ubuntu fallback for runner availability)
 name: ci
 
 on:
@@ -9,12 +9,16 @@ on:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   ci:
-    name: windows-ci
-    runs-on: windows-latest
+    name: rust-ci
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
       - name: Checkout
