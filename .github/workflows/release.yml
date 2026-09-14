@@ -11,6 +11,9 @@ concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
   windows-exe:
     name: build-netpilot-core-exe

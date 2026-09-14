@@ -9,7 +9,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/)-inspired, versions align
 
 ## [0.1.0] — 2026-09-14
 
-First end-to-end task track complete (**NP-001 … NP-120**). CI green on Windows and Ubuntu (`fmt` / `check` / `test` / `clippy`).
+**GitHub Release:** https://github.com/zongai/NetPilot/releases/tag/v0.1.0  
+**Artifact:** `netpilot-core.exe` (Windows x64)
+
+First formal release tag. End-to-end task track complete (**NP-001 … NP-120**). CI green on Windows and Ubuntu (`fmt` / `check` / `test` / `clippy`).
 
 ### Added
 
@@ -62,6 +65,11 @@ First end-to-end task track complete (**NP-001 … NP-120**). CI green on Window
 - Shadowsocks / SS2022 / SSR / VMess / VLESS (+ REALITY/Vision) / Trojan configs
 - TCP, TLS, WebSocket, HTTP/2, gRPC, REALITY transport surfaces
 - Protocol × transport compatibility matrix
+
+### S11 Airport Subscription
+
+- `netpilot-subscription`: fetch/cache/rollback, Base64 + URI/Clash/Sing-box parsers
+- Normalize to `ProxyProfile`, dedup/filter/rename/groups, userinfo, desktop shell
 
 ### Release engineering
 
