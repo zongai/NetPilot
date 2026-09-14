@@ -10,6 +10,7 @@ public enum AppPage
     Connections,
     Logs,
     Diagnostics,
+    Subscriptions,
     Settings,
 }
 
@@ -23,6 +24,7 @@ public static class AppPageMap
         AppPage.Connections => "connections",
         AppPage.Logs => "logs",
         AppPage.Diagnostics => "diagnostics",
+        AppPage.Subscriptions => "subscriptions",
         AppPage.Settings => "settings",
         _ => "home",
     };
@@ -34,6 +36,7 @@ public static class AppPageMap
         "connections" => AppPage.Connections,
         "logs" => AppPage.Logs,
         "diagnostics" => AppPage.Diagnostics,
+        "subscriptions" => AppPage.Subscriptions,
         "settings" => AppPage.Settings,
         _ => AppPage.Home,
     };
@@ -41,6 +44,6 @@ public static class AppPageMap
     /// <summary>Pages required for desktop smoke baseline (NP-060).</summary>
     public static readonly string[] SmokeTags =
     {
-        "home", "proxies", "rules", "connections", "logs", "diagnostics", "settings",
+        "home", "proxies", "rules", "connections", "logs", "diagnostics", "subscriptions", "settings",
     };
 }

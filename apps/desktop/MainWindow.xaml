@@ -23,6 +23,7 @@
                 <NavigationViewItem Content="Connections" Tag="connections" Icon="Shuffle" />
                 <NavigationViewItem Content="Logs" Tag="logs" Icon="Document" />
                 <NavigationViewItem Content="Diagnostics" Tag="diagnostics" Icon="Repair" />
+                <NavigationViewItem Content="Subscriptions" Tag="subscriptions" Icon="World" />
             </NavigationView.MenuItems>
         </NavigationView>
 

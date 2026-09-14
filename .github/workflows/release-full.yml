@@ -1,0 +1,96 @@
+# Full product package: Core (all crates) + WinUI Desktop GUI
+name: release-full
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: release-full-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  package-windows:
+    name: package-core-and-gui
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.98.1"
+          targets: x86_64-pc-windows-msvc
+          components: rustfmt, clippy
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Cargo fmt / clippy (core surface)
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy -p netpilot-core -- -D warnings
+
+      - name: Build Core release (all linked features)
+        run: cargo build -p netpilot-core --release
+
+      - name: Publish Desktop GUI (WinUI unpackaged, self-contained)
+        working-directory: apps/desktop
+        run: |
+          dotnet restore NetPilot.Desktop.csproj
+          dotnet publish NetPilot.Desktop.csproj -c Release -r win-x64 --self-contained true -o "${{ github.workspace }}/dist/desktop"
+
+      - name: Stage package layout
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:GITHUB_WORKSPACE "dist/NetPilot-win-x64"
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          Copy-Item "target/release/netpilot-core.exe" -Destination $root
+          # Desktop publish output
+          $desk = Join-Path $env:GITHUB_WORKSPACE "dist/desktop"
+          if (Test-Path $desk) {
+            Copy-Item -Path (Join-Path $desk "*") -Destination $root -Recurse -Force
+          }
+          @"
+          NetPilot Windows x64 package
+          - netpilot-core.exe  : Core runtime (rules/DNS/TUN/subscription surfaces)
+          - NetPilot.Desktop.exe : WinUI 3 GUI (IPC to Core; loopback until pipe wired)
+
+          Run Desktop; Core may be started by Desktop or launched manually.
+          "@ | Set-Content -Path (Join-Path $root "README.txt")
+          Get-ChildItem $root | Format-Table Name, Length
+
+      - name: Zip package
+        shell: pwsh
+        run: |
+          $src = Join-Path $env:GITHUB_WORKSPACE "dist/NetPilot-win-x64"
+          $zip = Join-Path $env:GITHUB_WORKSPACE "dist/NetPilot-0.1.0-win-x64.zip"
+          if (Test-Path $zip) { Remove-Item $zip }
+          Compress-Archive -Path (Join-Path $src "*") -DestinationPath $zip
+          Get-Item $zip | Format-List FullName, Length
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NetPilot-win-x64-full
+          path: dist/NetPilot-0.1.0-win-x64.zip
+          if-no-files-found: error
+
+      - name: Attach to GitHub Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/NetPilot-0.1.0-win-x64.zip
+            target/release/netpilot-core.exe
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

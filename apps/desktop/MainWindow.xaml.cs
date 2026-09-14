@@ -50,6 +50,12 @@ public sealed partial class MainWindow : Window
     public void NavigateTo(string pageTag)
     {
         var page = AppPageMap.FromTag(pageTag);
+        if (page == AppPage.Subscriptions)
+        {
+            ContentFrame.Content = new SubscriptionPage();
+            return;
+        }
+
         var body = page switch
         {
             AppPage.Home =>

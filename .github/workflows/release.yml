@@ -32,8 +32,8 @@ jobs:
       - name: Security / obvious-bug review (cargo)
         run: |
           cargo fmt --all -- --check
-          cargo clippy -p netpilot-core -p netpilot-tun -p netpilot-transport-tls -- -D warnings
-          cargo test -p netpilot-tun -p netpilot-transport-tls
+          cargo clippy -p netpilot-core -p netpilot-tun -p netpilot-transport-tls -p netpilot-subscription -- -D warnings
+          cargo test -p netpilot-tun -p netpilot-transport-tls -p netpilot-subscription
 
       - name: Build release exe
         run: cargo build -p netpilot-core --release
