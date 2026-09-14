@@ -9,6 +9,9 @@ version = "0.1.0"
 [[package]]
 name = "netpilot-core"
 version = "0.1.0"
+dependencies = [
+ "netpilot-core-lib",
+]
 
 [[package]]
 name = "netpilot-core-lib"
