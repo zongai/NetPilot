@@ -64,7 +64,12 @@ fn http_mode() -> &'static str {
     }
 }
 
-fn err_resp(req: &IpcEnvelope, kind: &str, message: String, code: i32) -> Result<IpcEnvelope, RouteError> {
+fn err_resp(
+    req: &IpcEnvelope,
+    kind: &str,
+    message: String,
+    code: i32,
+) -> Result<IpcEnvelope, RouteError> {
     Ok(IpcEnvelope::error_response(
         req.request_id.clone(),
         req.operation.clone(),
@@ -149,15 +154,15 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
 
     let mgr_add = mgr.clone();
     router.register("subscription.add", move |req| {
-        let payload = req.payload.as_ref().ok_or(RouteError::InvalidInput("missing payload"))?;
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
         let id = payload
             .get("id")
             .and_then(|v| v.as_str())
             .unwrap_or("default");
-        let name = payload
-            .get("name")
-            .and_then(|v| v.as_str())
-            .unwrap_or(id);
+        let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or(id);
         let url = payload
             .get("url")
             .and_then(|v| v.as_str())
@@ -181,7 +186,10 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     let mgr_upd = mgr.clone();
     let fetcher_upd = fetcher.clone();
     router.register("subscription.update", move |req| {
-        let payload = req.payload.as_ref().ok_or(RouteError::InvalidInput("missing payload"))?;
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
         let id = payload
             .get("id")
             .and_then(|v| v.as_str())
@@ -241,7 +249,10 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
 
     let mgr_rm = mgr.clone();
     router.register("subscription.remove", move |req| {
-        let payload = req.payload.as_ref().ok_or(RouteError::InvalidInput("missing payload"))?;
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
         let id = payload
             .get("id")
             .and_then(|v| v.as_str())

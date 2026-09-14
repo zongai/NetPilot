@@ -28,9 +28,9 @@ mod validate;
 pub use cache::{CacheEntry, SubscriptionCache};
 pub use decoder::{detect_and_decode, DecodeError, DecodedBody};
 pub use diagnose::{diagnose_failure, DiagnoseReport, DiagnoseStage};
-pub use fetcher::{FetchError, FetchRequest, FetchResponse, MockFetcher, SubscriptionFetcher};
 #[cfg(feature = "real-http")]
 pub use fetcher::UreqFetcher;
+pub use fetcher::{FetchError, FetchRequest, FetchResponse, MockFetcher, SubscriptionFetcher};
 pub use filter::{apply_filters, FilterRule};
 pub use groups::group_from_subscription;
 pub use http::{HttpRequestHeaders, DEFAULT_USER_AGENT};
