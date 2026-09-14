@@ -1,16 +1,36 @@
-// NetPilot Desktop main window + navigation (NP-049 / NP-050).
+// NetPilot Desktop main window + navigation (NP-049…NP-060).
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using NetPilot.Desktop.Navigation;
+using NetPilot.Desktop.Services;
+using NetPilot.Desktop.ViewModels;
 
 namespace NetPilot.Desktop;
 
 public sealed partial class MainWindow : Window
 {
+    private readonly IIpcService _ipc = new LoopbackIpcService();
+
+    public RuntimeStateViewModel Runtime { get; }
+    public ProxyListViewModel Proxies { get; } = new();
+    public RuleListViewModel Rules { get; } = new();
+    public ConnectionListViewModel Connections { get; } = new();
+    public LogViewModel Logs { get; } = new();
+    public DiagnosticsViewModel Diagnostics { get; }
+
     public MainWindow()
     {
         InitializeComponent();
-        // Default landing page
-        NavigateTo("home");
+        Runtime = new RuntimeStateViewModel(_ipc);
+        Diagnostics = new DiagnosticsViewModel(_ipc);
+
+        Proxies.LoadSample();
+        Rules.LoadSample();
+        Connections.LoadSample();
+        Logs.LoadSample();
+
+        NavigateTo(AppPageMap.Tag(AppPage.Home));
+        _ = Runtime.RefreshAsync();
     }
 
     private void NavView_SelectionChanged(
@@ -19,38 +39,38 @@ public sealed partial class MainWindow : Window
     {
         if (args.IsSettingsSelected)
         {
-            NavigateTo("settings");
+            NavigateTo(AppPageMap.Tag(AppPage.Settings));
             return;
         }
 
         if (args.SelectedItem is NavigationViewItem item && item.Tag is string tag)
-        {
             NavigateTo(tag);
-        }
     }
 
-    /// <summary>
-    /// Page model router (NP-050). Pages are placeholders until full XAML pages land.
-    /// </summary>
     public void NavigateTo(string pageTag)
     {
-        var title = pageTag switch
+        var page = AppPageMap.FromTag(pageTag);
+        var body = page switch
         {
-            "home" => "Home",
-            "proxies" => "Proxies",
-            "rules" => "Rules",
-            "logs" => "Logs",
-            "settings" => "Settings",
-            _ => "Unknown",
+            AppPage.Home =>
+                $"Home\nRuntime: {Runtime.State}\nReady: {Runtime.Ready}\nIPC: {Runtime.IpcState}",
+            AppPage.Proxies =>
+                $"Proxies\nNodes: {Proxies.Nodes.Count}\nGroups: {Proxies.Groups.Count}\nSelected: {Proxies.SelectedNode?.Name}",
+            AppPage.Rules =>
+                $"Rules\nCount: {Rules.Rules.Count}\nSelected: {Rules.Selected?.Source}",
+            AppPage.Connections => Connections.DetailText,
+            AppPage.Logs => $"Logs\nLines: {Logs.Lines.Count}",
+            AppPage.Diagnostics => $"Diagnostics items: {Diagnostics.Items.Count}",
+            AppPage.Settings => "Settings\n(IPC endpoint, theme — later)",
+            _ => pageTag,
         };
 
-        // Skeleton: single content text until Page types are added.
         ContentFrame.Content = new TextBlock
         {
-            Text = $"NetPilot — {title}",
-            FontSize = 24,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center,
+            Text = $"NetPilot — {body}",
+            FontSize = 18,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(8),
         };
     }
 }

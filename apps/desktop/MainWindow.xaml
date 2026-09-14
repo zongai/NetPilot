@@ -5,11 +5,10 @@
     Title="NetPilot">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="240" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- Navigation rail (NP-050) -->
         <NavigationView
             x:Name="NavView"
             Grid.Column="0"
@@ -21,7 +20,9 @@
                 <NavigationViewItem Content="Home" Tag="home" Icon="Home" />
                 <NavigationViewItem Content="Proxies" Tag="proxies" Icon="Switch" />
                 <NavigationViewItem Content="Rules" Tag="rules" Icon="Filter" />
+                <NavigationViewItem Content="Connections" Tag="connections" Icon="Shuffle" />
                 <NavigationViewItem Content="Logs" Tag="logs" Icon="Document" />
+                <NavigationViewItem Content="Diagnostics" Tag="diagnostics" Icon="Repair" />
             </NavigationView.MenuItems>
         </NavigationView>
 
