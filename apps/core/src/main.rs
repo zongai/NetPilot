@@ -1,1 +1,3 @@
-fn main() { println!("NetPilot Core skeleton"); }
+fn main() {
+    println!("NetPilot Core skeleton");
+}
