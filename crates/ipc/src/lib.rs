@@ -175,10 +175,7 @@ impl std::fmt::Display for EnvelopeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::UnsupportedVersion { got, min, max } => {
-                write!(
-                    f,
-                    "UnsupportedVersion: got {got}, supported {min}..={max}"
-                )
+                write!(f, "UnsupportedVersion: got {got}, supported {min}..={max}")
             }
             Self::Serialize(msg) => write!(f, "Serialize: {msg}"),
             Self::Deserialize(msg) => write!(f, "Deserialize: {msg}"),
@@ -228,7 +225,10 @@ mod tests {
         env.protocol_version = 99;
         let json = serde_json::to_string(&env).unwrap();
         let err = IpcEnvelope::from_json(&json).unwrap_err();
-        assert!(matches!(err, EnvelopeError::UnsupportedVersion { got: 99, .. }));
+        assert!(matches!(
+            err,
+            EnvelopeError::UnsupportedVersion { got: 99, .. }
+        ));
     }
 
     #[test]
