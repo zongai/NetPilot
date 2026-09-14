@@ -7,18 +7,13 @@
 use crate::device::{TunConfig, TunError, TunState};
 
 /// Where to look for `wintun.dll` on Windows.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum WintunDllPath {
     /// Same directory as the Core executable.
+    #[default]
     BesideExecutable,
     /// Explicit filesystem path.
     Absolute(String),
-}
-
-impl Default for WintunDllPath {
-    fn default() -> Self {
-        Self::BesideExecutable
-    }
 }
 
 #[derive(Debug, Clone)]
