@@ -3,7 +3,8 @@
 //! Windows Wintun integration is intentionally behind traits; unit tests use
 //! an in-memory mock. No `unsafe` in this crate yet.
 
-#![forbid(unsafe_code)]
+#![cfg_attr(not(feature = "wintun-native"), forbid(unsafe_code))]
+#![cfg_attr(feature = "wintun-native", allow(unsafe_code))]
 
 mod bypass;
 mod device;
