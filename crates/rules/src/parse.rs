@@ -141,10 +141,7 @@ mod tests {
         let r = parse_rule_line("PROCESS-NAME,Chrome.EXE,BROWSER")
             .unwrap()
             .unwrap();
-        assert_eq!(
-            r.matcher,
-            RuleMatcher::ProcessName("chrome.exe".into())
-        );
+        assert_eq!(r.matcher, RuleMatcher::ProcessName("chrome.exe".into()));
         let r = parse_rule_line("NETWORK,udp,U").unwrap().unwrap();
         assert_eq!(r.matcher, RuleMatcher::Network(NetworkProtocol::Udp));
     }

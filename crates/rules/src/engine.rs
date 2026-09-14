@@ -112,6 +112,8 @@ mod tests {
                 .outbound,
             "PROXY"
         );
-        assert!(engine.explain(&RouteRequest::domain("a.example.com")).contains("PROXY"));
+        assert!(engine
+            .explain(&RouteRequest::domain("a.example.com"))
+            .contains("PROXY"));
     }
 }

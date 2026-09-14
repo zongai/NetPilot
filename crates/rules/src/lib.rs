@@ -48,9 +48,7 @@ impl NetworkProtocol {
     }
 
     pub fn matches(self, other: NetworkProtocol) -> bool {
-        matches!(self, Self::Any)
-            || matches!(other, Self::Any)
-            || self == other
+        matches!(self, Self::Any) || matches!(other, Self::Any) || self == other
     }
 }
 
@@ -197,11 +195,7 @@ impl RuleIndex {
     pub fn new(mut rules: Vec<Rule>) -> Self {
         // Deterministic priority: lower priority number first; stable for ties.
         let mut indexed: Vec<(usize, Rule)> = rules.drain(..).enumerate().collect();
-        indexed.sort_by(|a, b| {
-            a.1.priority
-                .cmp(&b.1.priority)
-                .then_with(|| a.0.cmp(&b.0))
-        });
+        indexed.sort_by(|a, b| a.1.priority.cmp(&b.1.priority).then_with(|| a.0.cmp(&b.0)));
         Self {
             rules: indexed.into_iter().map(|(_, r)| r).collect(),
         }
@@ -271,10 +265,7 @@ fn rule_matches(rule: &Rule, req: &RouteRequest) -> bool {
             .map(|ip| ip_in_cidr(ip, cidr).unwrap_or(false))
             .unwrap_or(false),
         RuleMatcher::Port(p) => req.port == Some(*p),
-        RuleMatcher::Network(proto) => req
-            .network
-            .map(|n| proto.matches(n))
-            .unwrap_or(false),
+        RuleMatcher::Network(proto) => req.network.map(|n| proto.matches(n)).unwrap_or(false),
         RuleMatcher::ProcessName(name) => req
             .process_name
             .as_ref()

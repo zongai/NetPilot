@@ -1,8 +1,6 @@
 //! Rule fixtures and conformance cases (NP-048).
 
-use crate::{
-    parse_rules, RouteRequest, RoutingEngine, RuleIndex,
-};
+use crate::{parse_rules, RouteRequest, RoutingEngine, RuleIndex};
 
 /// One expected routing outcome for a request.
 #[derive(Debug, Clone)]

@@ -24,11 +24,7 @@ pub struct IndexedRules {
 impl IndexedRules {
     pub fn build(mut rules: Vec<Rule>) -> Self {
         let mut indexed: Vec<(usize, Rule)> = rules.drain(..).enumerate().collect();
-        indexed.sort_by(|a, b| {
-            a.1.priority
-                .cmp(&b.1.priority)
-                .then_with(|| a.0.cmp(&b.0))
-        });
+        indexed.sort_by(|a, b| a.1.priority.cmp(&b.1.priority).then_with(|| a.0.cmp(&b.0)));
         let rules: Vec<Rule> = indexed.into_iter().map(|(_, r)| r).collect();
         let mut domain_exact = HashMap::new();
         let mut process_exact = HashMap::new();
@@ -121,10 +117,7 @@ impl IndexedRules {
                 .map(|ip| ip_in_cidr(ip, cidr).unwrap_or(false))
                 .unwrap_or(false),
             RuleMatcher::Port(p) => req.port == Some(*p),
-            RuleMatcher::Network(proto) => req
-                .network
-                .map(|n| proto.matches(n))
-                .unwrap_or(false),
+            RuleMatcher::Network(proto) => req.network.map(|n| proto.matches(n)).unwrap_or(false),
             RuleMatcher::ProcessName(name) => req.process_name.as_ref().map_or(false, |p| {
                 let pattern = name.to_ascii_lowercase();
                 let process = p.to_ascii_lowercase();
