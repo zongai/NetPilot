@@ -30,9 +30,7 @@ pub use router::{echo_handler, RequestRouter, RouteError, RouteOutcome};
 pub use server::{
     NamedPipeServer, PipeConnection, PipeError, PipeServerConfig, ServerState, DEFAULT_PIPE_NAME,
 };
-pub use timeout::{
-    check_budget, BudgetError, CancelError, CancelToken, Deadline, TimeoutError,
-};
+pub use timeout::{check_budget, BudgetError, CancelError, CancelToken, Deadline, TimeoutError};
 
 use serde::{Deserialize, Serialize};
 

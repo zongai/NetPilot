@@ -97,9 +97,9 @@ impl std::error::Error for TimeoutError {}
 /// Combine cancel + deadline checks.
 pub fn check_budget(token: &CancelToken, deadline: &Deadline) -> Result<(), BudgetError> {
     token.check().map_err(|_| BudgetError::Cancelled)?;
-    deadline.check().map_err(|e| BudgetError::Timeout {
-        budget: e.budget,
-    })?;
+    deadline
+        .check()
+        .map_err(|e| BudgetError::Timeout { budget: e.budget })?;
     Ok(())
 }
 
@@ -144,9 +144,6 @@ mod tests {
         let t = CancelToken::new();
         t.cancel();
         let d = Deadline::after(Duration::from_secs(10));
-        assert!(matches!(
-            check_budget(&t, &d),
-            Err(BudgetError::Cancelled)
-        ));
+        assert!(matches!(check_budget(&t, &d), Err(BudgetError::Cancelled)));
     }
 }

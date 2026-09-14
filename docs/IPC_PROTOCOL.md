@@ -2,42 +2,30 @@
 
 Transport: Windows Named Pipe between Desktop and Core.
 
-## Envelope (versioned request/response/event)
+## Envelope (NP-015)
 
-Implemented in `netpilot-ipc` as `IpcEnvelope` (NP-015). Codec: JSON.
+`IpcEnvelope` JSON: `protocol_version`, `kind`, `request_id`, `operation`, `status`, `error`, `payload`, `correlation_id`.
 
-| Field | Role |
-|-------|------|
-| `protocol_version` | Negotiation / compatibility (`PROTOCOL_VERSION = 1`) |
-| `kind` | `request` \| `response` \| `event` |
-| `request_id` | Correlation between request and response |
-| `operation` | RPC method name |
-| `status` | `ok` \| `error` (responses) |
-| `error` | `{ kind, message, code? }` — taxonomy from `docs/ERRORS.md` |
-| `payload` | Operation-specific JSON |
-| `correlation_id` | Optional tracing join key |
-
-## Named pipe server (NP-016)
+## Named pipe (NP-016 / NP-017)
 
 | Type | Role |
 |------|------|
-| `PipeServerConfig` | `pipe_name` (default `\\.\pipe\netpilot-core`), `accept_timeout`, `max_instances` |
-| `NamedPipeServer` | State: Created → Listening → Connected → ShuttingDown → Closed |
-| `PipeConnection` | Accepted session skeleton (I/O in later tasks) |
+| `NamedPipeServer` | Core listen/accept/shutdown (+ `test_mode`) |
+| `NamedPipeClient` | Desktop connect/close (+ `test_mode`) |
+| Default name | `\\.\pipe\netpilot-core` |
 
-API: `listen`, `accept` (timeout / cancel), `shutdown`.  
-`new_test` enables an in-process client signal for unit tests without OS pipes.  
-OS `CreateNamedPipe` bind is intentionally thin on Windows (state transition only) until a dedicated transport wiring task; non-Windows requires `test_mode`.
+## Routing & events (NP-018 / NP-019)
 
-## Compatibility rules
+- `RequestRouter` maps `operation` → handler; unknown → `NotFound`
+- `EventStream` bounded queue; drops oldest when full
 
-- Prefer **additive** changes (new fields, new operations).
-- Breaking changes require a `protocol_version` bump and negotiation support.
-- Core remains the source of truth; Desktop must not assume silent schema drift.
-- Unsupported versions are rejected at decode (`EnvelopeError::UnsupportedVersion`).
+## Errors / timeout / auth / negotiate / health (NP-020…024)
 
-## Security
+- `map_pipe_error` / `map_route_error` → `ErrorBody` + numeric codes
+- `CancelToken`, `Deadline`, `check_budget`
+- `LocalAuthPolicy` + `privilege_for_operation`
+- `negotiate` version overlap; `health.check` / `health.ready`
 
-- Never put passwords, tokens, or private keys in `payload` fields that are logged.
-- Error `message` must stay free of secrets (`docs/SECURITY.md`).
-- Pipe path is a local endpoint name only — not a credential.
+## Compatibility
+
+Additive changes preferred; version bumps for breaks. No secrets in logged payloads.

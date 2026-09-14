@@ -1,8 +1,8 @@
 //! IPC error mapping (NP-020) — map internal kinds to envelope ErrorBody.
 
-use crate::{ErrorBody, IpcEnvelope, StatusCode};
 use crate::router::RouteError;
 use crate::server::PipeError;
+use crate::{ErrorBody, IpcEnvelope, StatusCode};
 
 /// Map a taxonomy kind + message into a response envelope.
 pub fn error_response(
@@ -58,7 +58,11 @@ pub fn map_pipe_error(request_id: &str, operation: Option<String>, err: &PipeErr
     )
 }
 
-pub fn map_route_error(request_id: &str, operation: Option<String>, err: &RouteError) -> IpcEnvelope {
+pub fn map_route_error(
+    request_id: &str,
+    operation: Option<String>,
+    err: &RouteError,
+) -> IpcEnvelope {
     let (kind, message) = match err {
         RouteError::InvalidInput(m) => ("invalid_input", (*m).to_string()),
         RouteError::Envelope(m) => ("invalid_input", m.clone()),

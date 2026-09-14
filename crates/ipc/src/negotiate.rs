@@ -20,7 +20,10 @@ impl VersionOffer {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NegotiateError {
-    NoOverlap { client: VersionOffer, server: VersionOffer },
+    NoOverlap {
+        client: VersionOffer,
+        server: VersionOffer,
+    },
     InvalidRange,
 }
 
