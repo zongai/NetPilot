@@ -1,7 +1,15 @@
 [package]
-name="netpilot-routing"
-version="0.1.0"
-edition="2021"
+name = "netpilot-routing"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+repository.workspace = true
 
 [lib]
-path="src/lib.rs"
+path = "src/lib.rs"
+
+[dependencies]
+netpilot-rules = { path = "../rules" }
+
+[lints]
+workspace = true
