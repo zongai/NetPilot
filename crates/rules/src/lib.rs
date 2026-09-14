@@ -2,21 +2,33 @@
 
 #![forbid(unsafe_code)]
 
+mod cache;
 mod domain;
 mod engine;
 mod fixtures;
 mod index;
+mod integrity;
+mod integration;
 mod ip;
+mod loader;
 mod parse;
 mod ruleset;
+mod subscription;
+mod updater;
 
+pub use cache::RuleSetCache;
 pub use domain::{domain_matches, DomainMatchKind};
 pub use engine::{RouteRequest, RoutingEngine};
 pub use fixtures::{conformance_cases, run_case, FixtureCase};
 pub use index::IndexedRules;
+pub use integrity::{content_fingerprint, verify_fingerprint, IntegrityError};
+pub use integration::process_ruleset_smoke;
 pub use ip::{ip_in_cidr, parse_cidr, parse_ip, Cidr, IpMatchError};
+pub use loader::{load_ruleset_from_str, LoadError};
 pub use parse::{parse_rule_line, parse_rules, ParseError};
 pub use ruleset::{match_with_process, process_rules_only, RuleSet};
+pub use subscription::{Subscription, SubscriptionManager, SubscriptionState};
+pub use updater::RuleSetUpdater;
 
 use serde::{Deserialize, Serialize};
 
