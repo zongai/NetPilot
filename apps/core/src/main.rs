@@ -18,6 +18,7 @@ use service::run_idle_service;
 #[cfg(windows)]
 use service::run_pipe_service;
 use service::ServiceControl;
+#[cfg(not(windows))]
 use std::time::Duration;
 
 fn feature_smoke() {
