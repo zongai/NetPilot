@@ -120,6 +120,97 @@ impl SubscriptionFetcher for MockFetcher {
     }
 }
 
+
+
+/// Production HTTP fetcher (feature `real-http`).
+#[cfg(feature = "real-http")]
+#[derive(Debug, Default)]
+pub struct UreqFetcher;
+
+#[cfg(feature = "real-http")]
+impl UreqFetcher {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+#[cfg(feature = "real-http")]
+impl SubscriptionFetcher for UreqFetcher {
+    fn fetch(&mut self, req: &FetchRequest) -> Result<FetchResponse, FetchError> {
+        if req.cancelled {
+            return Err(FetchError::Cancelled);
+        }
+        if req.timeout.is_zero() {
+            return Err(FetchError::Timeout);
+        }
+
+        let agent = ureq::builder()
+            .timeout_connect(req.timeout)
+            .timeout_read(req.timeout)
+            .build();
+
+        let mut ureq_req = agent.get(&req.url);
+        ureq_req = ureq_req.set("User-Agent", &req.headers.user_agent);
+        for (k, v) in &req.headers.extra {
+            ureq_req = ureq_req.set(k, v);
+        }
+        if let Some(etag) = &req.if_none_match {
+            ureq_req = ureq_req.set("If-None-Match", etag);
+        }
+        if let Some(lm) = &req.if_modified_since {
+            ureq_req = ureq_req.set("If-Modified-Since", lm);
+        }
+
+        let response = match ureq_req.call() {
+            Ok(r) => r,
+            Err(ureq::Error::Status(code, _resp)) => {
+                if code == 304 {
+                    return Err(FetchError::NotModified);
+                }
+                return Err(FetchError::HttpStatus(code));
+            }
+            Err(ureq::Error::Transport(tr)) => {
+                let msg = tr.to_string();
+                if msg.to_ascii_lowercase().contains("timed out")
+                    || msg.to_ascii_lowercase().contains("timeout")
+                {
+                    return Err(FetchError::Timeout);
+                }
+                return Err(FetchError::Network(msg));
+            }
+        };
+
+        let status = response.status();
+        if status == 304 {
+            return Err(FetchError::NotModified);
+        }
+        if !(200..300).contains(&status) {
+            return Err(FetchError::HttpStatus(status));
+        }
+
+        let etag = response.header("etag").map(str::to_string);
+        let last_modified = response.header("last-modified").map(str::to_string);
+        let mut headers = HashMap::new();
+        for name in ["etag", "last-modified", "subscription-userinfo", "content-type"] {
+            if let Some(v) = response.header(name) {
+                headers.insert(name.into(), v.to_string());
+            }
+        }
+
+        let body = response
+            .into_string()
+            .map_err(|e| FetchError::Network(e.to_string()))?;
+
+        Ok(FetchResponse {
+            status,
+            body,
+            etag,
+            last_modified,
+            headers,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

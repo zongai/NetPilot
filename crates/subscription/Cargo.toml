@@ -9,8 +9,14 @@ description = "Airport subscription fetch/parse/normalize (S11)"
 [lib]
 path = "src/lib.rs"
 
+[features]
+default = []
+# Real outbound HTTP via ureq (enabled by Core release binary).
+real-http = ["dep:ureq"]
+
 [dependencies]
 netpilot-proxy = { path = "../proxy" }
+ureq = { version = "2.12", optional = true, default-features = true }
 
 [lints]
 workspace = true

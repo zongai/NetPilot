@@ -126,3 +126,17 @@ Place a signed `wintun.dll` next to the Core binary when enabling the Windows TU
 - Ops: `health.check`, `health.ready`, `runtime.state`, `runtime.shutdown`, `ping`
 - Smoke exit: set `NETPILOT_SMOKE_ONLY=1`
 - GUI: `Start-NetPilot.cmd` starts Core then WPF Desktop
+
+
+## Subscription IPC (v0.1.4+)
+
+Core exposes:
+
+| Op | Payload |
+|----|---------|
+| `subscription.list` | — |
+| `subscription.add` | `{ "id", "name", "url", "enabled?" }` |
+| `subscription.update` | `{ "id", "timeout_secs?" }` |
+| `subscription.remove` | `{ "id" }` |
+
+Feature `real-http` (default on Core) uses `ureq` for outbound fetches. Library default remains mock for CI.

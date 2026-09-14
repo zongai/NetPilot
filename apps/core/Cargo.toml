@@ -10,6 +10,10 @@ description = "NetPilot Core — resident runtime + named-pipe IPC"
 name = "netpilot-core"
 path = "src/main.rs"
 
+[features]
+default = ["real-http"]
+real-http = ["netpilot-subscription/real-http"]
+
 [dependencies]
 netpilot-core-lib = { path = "../../crates/core" }
 netpilot-ipc = { path = "../../crates/ipc" }
