@@ -117,9 +117,7 @@ impl std::error::Error for ParseUriError {}
 /// Minimal URI parser for common schemes (not full WHATWG).
 pub fn parse_protocol_uri(raw: &str) -> Result<ProtocolUri, ParseUriError> {
     let raw = raw.trim();
-    let (scheme, rest) = raw
-        .split_once("://")
-        .ok_or(ParseUriError::InvalidFormat)?;
+    let (scheme, rest) = raw.split_once("://").ok_or(ParseUriError::InvalidFormat)?;
     let protocol = match scheme.to_ascii_lowercase().as_str() {
         "http" => ProtocolId::Http,
         "https" => ProtocolId::Https,
@@ -261,7 +259,15 @@ pub fn compatibility_matrix() -> Vec<CompatEntry> {
     let mut out = Vec::new();
     let all_t = [Tcp, Tls, Websocket, Http2, Grpc, Reality];
     for p in [
-        Http, Https, Socks5, Shadowsocks, Shadowsocks2022, ShadowsocksR, Vmess, Vless, Trojan,
+        Http,
+        Https,
+        Socks5,
+        Shadowsocks,
+        Shadowsocks2022,
+        ShadowsocksR,
+        Vmess,
+        Vless,
+        Trojan,
     ] {
         for t in all_t {
             let supported = match (p, t) {

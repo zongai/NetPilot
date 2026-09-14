@@ -1,6 +1,6 @@
 //! Diagnostics report model (NP-104).
 
-use crate::probe::{ProbeKind, ProbeResult, run_probe};
+use crate::probe::{run_probe, ProbeKind, ProbeResult};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReportSection {

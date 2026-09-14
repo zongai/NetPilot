@@ -26,13 +26,8 @@ pub struct ConnectionMeta {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConnectionEvent {
     Opened(ConnectionMeta),
-    Updated {
-        id: ConnectionId,
-        outbound: String,
-    },
-    Closed {
-        id: ConnectionId,
-    },
+    Updated { id: ConnectionId, outbound: String },
+    Closed { id: ConnectionId },
 }
 
 #[derive(Debug)]
