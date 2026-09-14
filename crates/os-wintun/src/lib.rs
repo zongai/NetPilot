@@ -152,6 +152,9 @@ mod win {
         api: Api,
     }
 
+    // HMODULE is process-local; intended single-thread owner with cross-thread handoff.
+    unsafe impl Send for WintunLibrary {}
+
     impl WintunLibrary {
         pub fn path(&self) -> &Path {
             &self.path

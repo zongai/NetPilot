@@ -60,6 +60,12 @@ struct NativeBundle {
     session: netpilot_os_wintun::WintunNativeSession,
 }
 
+#[cfg(all(windows, feature = "wintun-native"))]
+unsafe impl Send for NativeBundle {}
+
+// Native session holds Win32 handles; single-owner process-local use is Send.
+unsafe impl Send for WintunSession {}
+
 impl std::fmt::Debug for WintunSession {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("WintunSession")
