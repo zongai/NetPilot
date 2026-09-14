@@ -1,0 +1,16 @@
+[package]
+name = "netpilot-subscription"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+repository.workspace = true
+description = "Airport subscription fetch/parse/normalize (S11)"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+netpilot-proxy = { path = "../proxy" }
+
+[lints]
+workspace = true

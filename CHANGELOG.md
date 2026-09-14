@@ -77,6 +77,13 @@ First end-to-end task track complete (**NP-001 … NP-120**). CI green on Window
 
 ## Unreleased
 
+### S11 Airport Subscription
+
+- crates/subscription (netpilot-subscription) NP-121..NP-144
+- Mock HTTP fetcher, Base64 decoder, URI/Clash/Sing-box parsers
+- Normalize to ProxyProfile, fingerprint dedup, filters, groups, userinfo
+- Desktop SubscriptionPage.xaml + ViewModel shell
+
 - Load `wintun.dll` at runtime on Windows (feature-gated)
 - Real rustls / platform TLS sessions behind `TlsTransport`
 - Desktop MSBuild packaging and signed installer

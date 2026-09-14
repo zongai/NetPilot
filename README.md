@@ -78,7 +78,7 @@ Contributors and agents must:
 
 ## Status
 
-**NP-001 … NP-120 complete** (stages S0–S9). Workspace libraries, rule/DNS/TUN/process surfaces, protocol configs, and transport IDs are in tree.
+**NP-001 … NP-144 complete** (stages S0–S9 + **S11** subscription). Workspace libraries, rule/DNS/TUN/process surfaces, protocol configs, and transport IDs are in tree.
 
 | Stage | Scope |
 |-------|--------|
@@ -91,6 +91,7 @@ Contributors and agents must:
 | S7 | Process identity + RuleSet lifecycle |
 | S8 | Connections, inspector, diagnostics, script boundary |
 | S9 | Protocol/transport adapters + compatibility matrix |
+| S11 | Airport subscription fetch/parse/normalize pipeline |
 
 Changelog: [`CHANGELOG.md`](CHANGELOG.md). Architecture: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 

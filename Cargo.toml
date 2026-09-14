@@ -25,6 +25,7 @@ members = [
     "crates/process",
     "crates/diagnostics",
     "crates/testkit",
+    "crates/subscription",
 ]
 
 [workspace.package]
