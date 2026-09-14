@@ -53,14 +53,8 @@ mod tests {
 
     #[test]
     fn normalize_and_glob() {
-        assert_eq!(
-            normalize_exe_path(r"C:\Foo\Bar.EXE"),
-            "c:/foo/bar.exe"
-        );
-        assert!(path_matches(
-            r"C:\Program Files\App\app.exe",
-            r"*/app.exe"
-        ));
+        assert_eq!(normalize_exe_path(r"C:\Foo\Bar.EXE"), "c:/foo/bar.exe");
+        assert!(path_matches(r"C:\Program Files\App\app.exe", r"*/app.exe"));
         assert!(!path_matches(r"C:\Other\x.exe", r"*/app.exe"));
     }
 }

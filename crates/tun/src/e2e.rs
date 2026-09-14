@@ -78,9 +78,7 @@ pub fn run_mock_e2e() -> E2eReport {
             dst: "1.1.1.1:443".into(),
             protocol: "tcp",
         });
-        let udp = UdpIntercept {
-            capture_dns: true,
-        };
+        let udp = UdpIntercept { capture_dns: true };
         let _ = udp.inspect(&InterceptContext {
             src: "10.255.0.2:53000".into(),
             dst: "8.8.8.8:53".into(),

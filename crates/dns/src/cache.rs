@@ -97,7 +97,11 @@ mod tests {
             Duration::from_secs(60),
         );
         assert!(c.get(&CacheKey::a("x.test")).is_some());
-        c.insert(CacheKey::a("y.test"), vec!["2.2.2.2".into()], Duration::ZERO);
+        c.insert(
+            CacheKey::a("y.test"),
+            vec!["2.2.2.2".into()],
+            Duration::ZERO,
+        );
         // zero TTL is already expired relative to now for practical purposes
         let _ = c.get(&CacheKey::a("y.test"));
     }

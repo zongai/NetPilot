@@ -17,15 +17,15 @@ mod transport;
 
 pub use cache::{CacheKey, DnsCache, DnsRecord};
 pub use fakeip::{FakeIpAllocator, FakeIpMapping};
-pub use fixtures::{dns_conformance_cases, run_dns_case, routing_and_leak_smoke, DnsFixtureCase};
+pub use fixtures::{dns_conformance_cases, routing_and_leak_smoke, run_dns_case, DnsFixtureCase};
 pub use leak::{LeakGuard, LeakRisk};
 pub use metrics::DnsMetrics;
 pub use policy::{DnsPolicy, ResolveMode};
-pub use resolver::{DnsError, DnsQuery, DnsResponse, DnsResolver};
+pub use resolver::{DnsError, DnsQuery, DnsResolver, DnsResponse};
 pub use routing::{DnsRoute, DnsRoutePolicy};
 pub use system::{SystemResolver, SystemResolverInfo};
 pub use transport::{
-    DnsTransport, DohTransport, DoTTransport, MockTransport, TcpDnsTransport, TransportKind,
+    DnsTransport, DoTTransport, DohTransport, MockTransport, TcpDnsTransport, TransportKind,
     UdpDnsTransport,
 };
 
