@@ -142,9 +142,7 @@ pub struct DialReport {
 pub fn dial_direct(req: &DialRequest) -> Result<(OutboundStream, DialReport), OutboundError> {
     let started = std::time::Instant::now();
     let addr = format!("{}:{}", req.target_host.trim(), req.target_port);
-    let addrs = addr
-        .to_socket_addrs_safe()
-        .map_err(OutboundError::Dial)?;
+    let addrs = addr.to_socket_addrs_safe().map_err(OutboundError::Dial)?;
     let deadline = started + req.timeout;
     let mut last = OutboundError::Dial("no address".into());
     for a in addrs {
