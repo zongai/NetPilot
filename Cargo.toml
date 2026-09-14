@@ -1,0 +1,38 @@
+[workspace]
+resolver = "2"
+members = [
+    "apps/core",
+    "crates/core",
+    "crates/ipc",
+    "crates/config",
+    "crates/rules",
+    "crates/routing",
+    "crates/proxy",
+    "crates/protocols/common",
+    "crates/protocols/shadowsocks",
+    "crates/protocols/shadowsocksr",
+    "crates/protocols/vmess",
+    "crates/protocols/vless",
+    "crates/protocols/trojan",
+    "crates/transports/tcp",
+    "crates/transports/tls",
+    "crates/transports/websocket",
+    "crates/transports/http2",
+    "crates/transports/grpc",
+    "crates/transports/reality",
+    "crates/dns",
+    "crates/tun",
+    "crates/process",
+    "crates/diagnostics",
+    "crates/testkit",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/zongai/NetPilot"
+readme = "README.md"
+
+[workspace.dependencies]
+# Shared dependency versions will be pinned here as crates grow (NP-002+).
