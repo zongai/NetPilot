@@ -41,7 +41,9 @@ impl BypassPolicy {
         if self.bypass_loopback && (ip.starts_with("127.") || ip == "::1" || ip == "[::1]") {
             return BypassDecision::Bypass(BypassReason::Loopback);
         }
-        if self.bypass_link_local && (ip.starts_with("169.254.") || ip.to_ascii_lowercase().starts_with("fe80:")) {
+        if self.bypass_link_local
+            && (ip.starts_with("169.254.") || ip.to_ascii_lowercase().starts_with("fe80:"))
+        {
             return BypassDecision::Bypass(BypassReason::LinkLocal);
         }
         if self.bypass_private && is_private_v4(ip) {

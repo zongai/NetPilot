@@ -81,9 +81,7 @@ mod tests {
 
     #[test]
     fn udp_dns_optional() {
-        let mut u = UdpIntercept {
-            capture_dns: true,
-        };
+        let mut u = UdpIntercept { capture_dns: true };
         assert_eq!(
             u.inspect(&InterceptContext {
                 src: "10.0.0.2:5555".into(),
