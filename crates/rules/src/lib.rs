@@ -8,6 +8,7 @@ mod fixtures;
 mod index;
 mod ip;
 mod parse;
+mod ruleset;
 
 pub use domain::{domain_matches, DomainMatchKind};
 pub use engine::{RouteRequest, RoutingEngine};
@@ -15,6 +16,7 @@ pub use fixtures::{conformance_cases, run_case, FixtureCase};
 pub use index::IndexedRules;
 pub use ip::{ip_in_cidr, parse_cidr, parse_ip, Cidr, IpMatchError};
 pub use parse::{parse_rule_line, parse_rules, ParseError};
+pub use ruleset::{match_with_process, process_rules_only, RuleSet};
 
 use serde::{Deserialize, Serialize};
 
