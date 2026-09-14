@@ -1,3 +1,6 @@
+# NetPilot pinned toolchain (NP-002).
+# Reproducible builds: pin a concrete stable release, not the moving "stable" alias.
 [toolchain]
-channel = "stable"
+channel = "1.98.1"
 components = ["rustfmt", "clippy"]
+profile = "minimal"

@@ -1,8 +1,16 @@
 # Contributing
 
+## Toolchain
+
+Pinned Rust **1.98.1** + `rustfmt` + `clippy` (see `rust-toolchain.toml` and `docs/TOOLCHAIN.md`).
+
+```powershell
+rustup show   # expect 1.98.1 inside this repo
+```
+
 ## Branches and PRs
 
-- Use the task id in branch and PR titles: `NP-###` (e.g. `NP-001-workspace-baseline`).
+- Use the task id in branch and PR titles: `NP-###` (e.g. `NP-002-toolchain-pin`).
 - One primary task per PR when possible.
 - Reference `docs/tasks/NP-###.md` in the PR description.
 
@@ -16,6 +24,8 @@ cargo clippy --workspace --all-targets -- -D warnings
 ```
 
 Or run `./scripts/ci.ps1`.
+
+Formatting and lint policy details: `docs/TOOLCHAIN.md`.
 
 ## Windows-sensitive changes
 

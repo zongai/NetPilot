@@ -1,5 +1,9 @@
-# NetPilot lightweight smoke (NP-001+)
+# NetPilot lightweight smoke (NP-002+)
+# Uses pinned toolchain from rust-toolchain.toml. See docs/TOOLCHAIN.md.
 $ErrorActionPreference = "Stop"
+
+Write-Host "== toolchain =="
+rustc --version
 
 Write-Host "== cargo check --workspace =="
 cargo check --workspace

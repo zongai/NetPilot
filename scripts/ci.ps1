@@ -1,6 +1,11 @@
-# NetPilot CI baseline (NP-001+)
-# Run from repo root on a machine with stable Rust + rustfmt + clippy.
+# NetPilot CI baseline (NP-002+)
+# Requires pinned toolchain from rust-toolchain.toml (1.98.1 + rustfmt + clippy).
+# See docs/TOOLCHAIN.md.
 $ErrorActionPreference = "Stop"
+
+Write-Host "== toolchain =="
+rustc --version
+cargo --version
 
 Write-Host "== cargo fmt --check =="
 cargo fmt --all -- --check

@@ -38,9 +38,12 @@ REALITY is a security/transport capability, not a standalone protocol.
 
 ## Development
 
-Requirements: stable Rust (see `rust-toolchain.toml`), Windows for full TUN / desktop smoke.
+**Pinned toolchain:** Rust **1.98.1** + `rustfmt` + `clippy` (`rust-toolchain.toml`).  
+Policy details: [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md). Windows required for full TUN / desktop smoke.
 
 ```powershell
+rustup show   # expect 1.98.1
+
 # Format, check, test, lint (CI baseline)
 ./scripts/ci.ps1
 
