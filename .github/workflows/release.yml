@@ -1,0 +1,52 @@
+# Formal Windows release binary for netpilot-core
+name: release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows-exe:
+    name: build-netpilot-core-exe
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.98.1"
+          targets: x86_64-pc-windows-msvc
+
+      - name: Security / obvious-bug review (cargo)
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy -p netpilot-core -- -D warnings
+          cargo test -p netpilot-core --lib
+
+      - name: Build release exe
+        run: cargo build -p netpilot-core --release
+
+      - name: Upload netpilot-core.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: netpilot-core-windows-x64
+          path: target/release/netpilot-core.exe
+          if-no-files-found: error
+
+      - name: Publish GitHub Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/release/netpilot-core.exe
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

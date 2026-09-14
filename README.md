@@ -78,5 +78,40 @@ Contributors and agents must:
 
 ## Status
 
-Foundation stage (**S0**, NP-001…NP-012) complete: toolchain, agent rules, architecture, security, errors, logging, testing, Windows CI, scripts, doc index, release gates.  
-Core and protocol crates remain skeletons; behavior lands in S1+ (NP-013…).
+**NP-001 … NP-120 complete** (stages S0–S9). Workspace libraries, rule/DNS/TUN/process surfaces, protocol configs, and transport IDs are in tree.
+
+| Stage | Scope |
+|-------|--------|
+| S0–S1 | Toolchain, CI, Core runtime, IPC |
+| S2 | Config + proxy model |
+| S3 | Rules / routing engine |
+| S4 | WinUI shell + IPC service abstraction |
+| S5 | TUN abstraction, bypass, mock E2E, Wintun wiring surface |
+| S6 | DNS resolver stack + Fake-IP |
+| S7 | Process identity + RuleSet lifecycle |
+| S8 | Connections, inspector, diagnostics, script boundary |
+| S9 | Protocol/transport adapters + compatibility matrix |
+
+Changelog: [`CHANGELOG.md`](CHANGELOG.md). Architecture: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+Production packet path still uses **mocks** in CI. Windows release builds produce `netpilot-core.exe` (see Release).
+
+## Release
+
+### GitHub Actions
+
+| Workflow | Trigger | Output |
+|----------|---------|--------|
+| `ci` | push / PR to `main` | fmt, check, test, clippy (Windows + Ubuntu) |
+| `release` | tag `v*`, `workflow_dispatch`, or push to `main` | `netpilot-core.exe` artifact (Windows `release` profile) |
+
+Download artifacts from the Actions run, or create a GitHub Release from a version tag (`v0.1.0`).
+
+### Local release binary
+
+```powershell
+cargo build -p netpilot-core --release
+# target\release\netpilot-core.exe
+```
+
+Place a signed `wintun.dll` next to the Core binary when enabling the Windows TUN path (see `docs/TUN.md`).

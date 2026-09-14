@@ -15,3 +15,10 @@ Crate: `netpilot-tun`.
 
 Real Wintun FFI and privileged route application are **out of scope** for these tasks; mocks keep CI deterministic on `windows-latest` without driver install.
 
+
+
+## Wintun wiring
+
+- `WintunSession` / `WintunTunProvider` define load → adapter → session lifecycle.
+- Default builds do **not** link `wintun.dll`. Feature `wintun-native` is reserved.
+- Ship `wintun.dll` beside `netpilot-core.exe` for production Windows TUN.

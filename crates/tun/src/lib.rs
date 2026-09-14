@@ -13,6 +13,7 @@ mod packet;
 mod provider;
 mod rollback;
 mod route;
+mod wintun;
 mod wintun_spike;
 
 pub use bypass::{BypassDecision, BypassPolicy, BypassReason};
@@ -23,6 +24,9 @@ pub use packet::{PacketBatch, PacketDirection, PacketMeta, PacketPipeline};
 pub use provider::{MockTunProvider, TunProvider};
 pub use rollback::{cleanup_all, TunSessionGuard};
 pub use route::{RouteEntry, RouteManager, RouteOp};
+pub use wintun::{
+    WintunAdapterRequest, WintunDllPath, WintunSession, WintunSessionState, WintunTunProvider,
+};
 pub use wintun_spike::{WintunFeasibility, WintunStatus};
 
 pub const CRATE_NAME: &str = "netpilot-tun";
