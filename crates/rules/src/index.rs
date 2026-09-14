@@ -118,15 +118,18 @@ impl IndexedRules {
                 .unwrap_or(false),
             RuleMatcher::Port(p) => req.port == Some(*p),
             RuleMatcher::Network(proto) => req.network.map(|n| proto.matches(n)).unwrap_or(false),
-            RuleMatcher::ProcessName(name) => req.process_name.as_ref().map_or(false, |p| {
-                let pattern = name.to_ascii_lowercase();
-                let process = p.to_ascii_lowercase();
-                let base = process
-                    .rsplit(['/', '\\'])
-                    .next()
-                    .unwrap_or(process.as_str());
-                base == pattern || process == pattern
-            }),
+            RuleMatcher::ProcessName(name) => match req.process_name.as_ref() {
+                Some(p) => {
+                    let pattern = name.to_ascii_lowercase();
+                    let process = p.to_ascii_lowercase();
+                    let base = process
+                        .rsplit(['/', '\\'])
+                        .next()
+                        .unwrap_or(process.as_str());
+                    base == pattern || process == pattern
+                }
+                None => false,
+            },
             RuleMatcher::MatchAll => true,
         };
         if !matched {
