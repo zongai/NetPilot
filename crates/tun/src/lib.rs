@@ -1,4 +1,4 @@
-//! TUN provider abstraction and packet pipelines (NP-061…NP-070).
+//! TUN provider abstraction and packet pipelines (NP-061…NP-072).
 //!
 //! Windows Wintun integration is intentionally behind traits; unit tests use
 //! an in-memory mock. No `unsafe` in this crate yet.
@@ -7,17 +7,21 @@
 
 mod bypass;
 mod device;
+mod e2e;
 mod intercept;
 mod packet;
 mod provider;
+mod rollback;
 mod route;
 mod wintun_spike;
 
 pub use bypass::{BypassDecision, BypassPolicy, BypassReason};
 pub use device::{TunConfig, TunDevice, TunError, TunState};
+pub use e2e::{run_mock_e2e, E2eReport};
 pub use intercept::{InterceptAction, InterceptContext, TcpIntercept, UdpIntercept};
 pub use packet::{PacketBatch, PacketDirection, PacketMeta, PacketPipeline};
 pub use provider::{MockTunProvider, TunProvider};
+pub use rollback::{cleanup_all, TunSessionGuard};
 pub use route::{RouteEntry, RouteManager, RouteOp};
 pub use wintun_spike::{WintunFeasibility, WintunStatus};
 
