@@ -294,7 +294,6 @@ impl TrafficEngine {
             .unwrap_or_else(|_| "198.18.0.1".into())
     }
 
-
     pub fn attach_inbound(&mut self, inbound: SocksInbound) {
         self.inbound = Some(inbound);
     }

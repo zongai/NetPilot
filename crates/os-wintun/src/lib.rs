@@ -89,8 +89,10 @@ mod win {
     type FnCloseAdapter = unsafe extern "C" fn(adapter: *mut core::ffi::c_void);
     type FnGetAdapterLuid =
         unsafe extern "C" fn(adapter: *mut core::ffi::c_void, luid: *mut u64) -> i32;
-    type FnStartSession =
-        unsafe extern "C" fn(adapter: *mut core::ffi::c_void, capacity: u32) -> *mut core::ffi::c_void;
+    type FnStartSession = unsafe extern "C" fn(
+        adapter: *mut core::ffi::c_void,
+        capacity: u32,
+    ) -> *mut core::ffi::c_void;
     type FnEndSession = unsafe extern "C" fn(session: *mut core::ffi::c_void);
     type FnGetReadWaitEvent = unsafe extern "C" fn(session: *mut core::ffi::c_void) -> RawHandle;
     type FnReceivePacket = unsafe extern "C" fn(
@@ -194,9 +196,8 @@ mod win {
         ) -> Result<WintunNativeSession, WintunLoadError> {
             let wname = wide_str(name);
             let wtype = wide_str(tunnel_type);
-            let adapter = unsafe {
-                (self.api.create_adapter)(wname.as_ptr(), wtype.as_ptr(), ptr::null())
-            };
+            let adapter =
+                unsafe { (self.api.create_adapter)(wname.as_ptr(), wtype.as_ptr(), ptr::null()) };
             if adapter.is_null() {
                 // Try open existing
                 let opened = unsafe { (self.api.open_adapter)(wname.as_ptr()) };
@@ -322,8 +323,7 @@ mod win {
             if packet.is_empty() || packet.len() > 0xffff {
                 return Err(WintunLoadError::Api("invalid packet size".into()));
             }
-            let buf =
-                unsafe { (self.allocate_send_packet)(self.session, packet.len() as u32) };
+            let buf = unsafe { (self.allocate_send_packet)(self.session, packet.len() as u32) };
             if buf.is_null() {
                 let err = unsafe { GetLastError() };
                 return Err(WintunLoadError::Api(format!(

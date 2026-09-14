@@ -139,9 +139,7 @@ impl WintunSession {
                                 self.state = WintunSessionState::Failed;
                                 self.last_error =
                                     Some("wintun.dll loaded but no known exports".into());
-                                return Err(TunError::Io(
-                                    "wintun.dll loaded but no known exports",
-                                ));
+                                return Err(TunError::Io("wintun.dll loaded but no known exports"));
                             }
                             // Keep loaded only for probe path; open_session reloads for ownership.
                             drop(lib);

@@ -63,8 +63,8 @@ mod rustls_impl {
         let config = Arc::new(config);
         let name: ServerName<'static> = ServerName::try_from(server_name.to_string())
             .map_err(|_| OutboundError::Tls(format!("invalid SNI '{server_name}'")))?;
-        let conn = ClientConnection::new(config, name)
-            .map_err(|e| OutboundError::Tls(e.to_string()))?;
+        let conn =
+            ClientConnection::new(config, name).map_err(|e| OutboundError::Tls(e.to_string()))?;
         let mut inner = StreamOwned::new(conn, stream);
         // Force handshake by writing zero-length attempt via flush path.
         inner

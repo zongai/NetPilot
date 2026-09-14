@@ -23,7 +23,9 @@ pub fn dial_vless(
 
     let use_tls = matches!(
         profile.transport,
-        None | Some(TransportKind::Tls) | Some(TransportKind::Reality) | Some(TransportKind::Websocket)
+        None | Some(TransportKind::Tls)
+            | Some(TransportKind::Reality)
+            | Some(TransportKind::Websocket)
     );
 
     let mut stream: OutboundStream = if use_tls {
@@ -35,7 +37,12 @@ pub fn dial_vless(
         let alpn: Vec<&str> = profile
             .alpn
             .as_deref()
-            .map(|s| s.split(',').map(str::trim).filter(|x| !x.is_empty()).collect())
+            .map(|s| {
+                s.split(',')
+                    .map(str::trim)
+                    .filter(|x| !x.is_empty())
+                    .collect()
+            })
             .unwrap_or_default();
         let tls = wrap_tls(tcp, sni, &alpn, false)?;
         OutboundStream::Tls(Box::new(tls))

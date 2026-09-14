@@ -28,13 +28,14 @@ pub fn dial_trojan(
     let alpn: Vec<&str> = profile
         .alpn
         .as_deref()
-        .map(|s| s.split(',').map(str::trim).filter(|x| !x.is_empty()).collect())
+        .map(|s| {
+            s.split(',')
+                .map(str::trim)
+                .filter(|x| !x.is_empty())
+                .collect()
+        })
         .unwrap_or_default();
-    let alpn_refs: Vec<&str> = if alpn.is_empty() {
-        vec![]
-    } else {
-        alpn
-    };
+    let alpn_refs: Vec<&str> = if alpn.is_empty() { vec![] } else { alpn };
 
     let mut tls = wrap_tls(tcp, sni, &alpn_refs, false)?;
 

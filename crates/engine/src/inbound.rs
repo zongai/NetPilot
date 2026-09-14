@@ -32,13 +32,16 @@ impl SocksInbound {
     }
 
     pub fn stats_snapshot(&self) -> InboundStats {
-        self.stats.lock().map(|g| InboundStats {
-            accepted: g.accepted,
-            active: g.active,
-            bytes_up: g.bytes_up,
-            bytes_down: g.bytes_down,
-            errors: g.errors,
-        }).unwrap_or_default()
+        self.stats
+            .lock()
+            .map(|g| InboundStats {
+                accepted: g.accepted,
+                active: g.active,
+                bytes_up: g.bytes_up,
+                bytes_down: g.bytes_down,
+                errors: g.errors,
+            })
+            .unwrap_or_default()
     }
 
     pub fn stop(&self) {
@@ -181,7 +184,8 @@ fn read_socks_target(stream: &mut TcpStream, atyp: u8) -> Result<(String, u16), 
             let mut b = [0u8; 16 + 2];
             stream.read_exact(&mut b).map_err(|e| e.to_string())?;
             // compress to string form
-            let host = std::net::Ipv6Addr::from(<[u8; 16]>::try_from(&b[..16]).unwrap()).to_string();
+            let host =
+                std::net::Ipv6Addr::from(<[u8; 16]>::try_from(&b[..16]).unwrap()).to_string();
             let port = u16::from_be_bytes([b[16], b[17]]);
             Ok((host, port))
         }

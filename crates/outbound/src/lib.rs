@@ -203,9 +203,7 @@ pub fn dial_via_profile(
         ProtocolKind::Http => dial_http_connect(profile, req),
         ProtocolKind::Trojan => dial_trojan(profile, req),
         ProtocolKind::Vless => dial_vless(profile, req),
-        ProtocolKind::Shadowsocks | ProtocolKind::Shadowsocks2022 => {
-            dial_shadowsocks(profile, req)
-        }
+        ProtocolKind::Shadowsocks | ProtocolKind::Shadowsocks2022 => dial_shadowsocks(profile, req),
         ProtocolKind::Vmess => Err(OutboundError::Unsupported(
             "vmess dial not enabled in this build".into(),
         )),
@@ -246,9 +244,7 @@ pub(crate) fn connect_server(
     timeout: Duration,
 ) -> Result<TcpStream, OutboundError> {
     let addr = format!("{}:{}", host.trim(), port);
-    let addrs = addr
-        .to_socket_addrs_safe()
-        .map_err(OutboundError::Dial)?;
+    let addrs = addr.to_socket_addrs_safe().map_err(OutboundError::Dial)?;
     let started = std::time::Instant::now();
     let deadline = started + timeout;
     let mut last = OutboundError::Dial("no address".into());

@@ -290,9 +290,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
         )
     });
 
-
     // --- Traffic engine (rules + profiles + TUN + outbound) ---
-
     let engine_load = engine.clone();
     router.register("rules.load", move |req| {
         let payload = req
@@ -307,10 +305,11 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             .lock()
             .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
         match g.load_rules_text(text) {
-            Ok(count) => Ok(
-                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
-                    .with_payload(serde_json::json!({ "loaded": count })),
-            ),
+            Ok(count) => Ok(IpcEnvelope::ok_response(
+                req.request_id.clone(),
+                req.operation.clone(),
+            )
+            .with_payload(serde_json::json!({ "loaded": count }))),
             Err(e) => err_resp(req, "invalid_argument", e.to_string(), 400),
         }
     });
@@ -400,8 +399,8 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             .get("protocol")
             .and_then(|v| v.as_str())
             .unwrap_or("socks5");
-        let protocol = ProtocolKind::parse(proto_s)
-            .ok_or(RouteError::InvalidInput("unknown protocol"))?;
+        let protocol =
+            ProtocolKind::parse(proto_s).ok_or(RouteError::InvalidInput("unknown protocol"))?;
         let profile = ProxyProfile {
             id: id.into(),
             name: name.into(),
