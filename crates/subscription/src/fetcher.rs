@@ -120,7 +120,6 @@ impl SubscriptionFetcher for MockFetcher {
     }
 }
 
-
 /// Production HTTP fetcher (feature `real-http`).
 #[cfg(feature = "real-http")]
 #[derive(Debug, Default)]
@@ -188,9 +187,7 @@ impl SubscriptionFetcher for UreqFetcher {
         }
 
         let etag = response.header("etag").map(str::to_string);
-        let last_modified = response
-            .header("last-modified")
-            .map(str::to_string);
+        let last_modified = response.header("last-modified").map(str::to_string);
         let mut headers = HashMap::new();
         for name in [
             "etag",
