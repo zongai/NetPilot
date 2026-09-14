@@ -5,10 +5,7 @@ use netpilot_core_lib::CoreRuntime;
 
 fn main() {
     let mut runtime = CoreRuntime::new();
-    eprintln!(
-        "netpilot-core state={}",
-        runtime.state().as_str()
-    );
+    eprintln!("netpilot-core state={}", runtime.state().as_str());
 
     if let Err(err) = runtime.begin_start() {
         eprintln!("start failed: {err}");

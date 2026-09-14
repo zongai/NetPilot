@@ -102,7 +102,11 @@ impl CoreRuntime {
 
     /// `Created -> Starting`.
     pub fn begin_start(&mut self) -> Result<(), Error> {
-        self.transition(RuntimeState::Created, RuntimeState::Starting, "begin_start")
+        self.transition(
+            RuntimeState::Created,
+            RuntimeState::Starting,
+            "begin_start",
+        )
     }
 
     /// `Starting -> Running` (after subsystems report ready in later tasks).
@@ -110,7 +114,11 @@ impl CoreRuntime {
         if self.cancel_requested {
             return Err(Error::Cancelled);
         }
-        self.transition(RuntimeState::Starting, RuntimeState::Running, "mark_running")
+        self.transition(
+            RuntimeState::Starting,
+            RuntimeState::Running,
+            "mark_running",
+        )
     }
 
     /// Enter graceful stop from `Running` or `Starting`.
