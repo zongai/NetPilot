@@ -30,12 +30,8 @@ fn main() {
 
     let sub = SubscriptionProfile::new("builtin", "demo", "https://example.com/sub");
     let sample = "trojan://pass@example.com:443?security=tls#demo-node\n";
-    let pipe = run_subscription_pipeline(
-        &sub,
-        sample,
-        &FilterRule::default(),
-        &RenameRule::default(),
-    );
+    let pipe =
+        run_subscription_pipeline(&sub, sample, &FilterRule::default(), &RenameRule::default());
     eprintln!(
         "subscription demo nodes={} group={}",
         pipe.profiles.len(),
