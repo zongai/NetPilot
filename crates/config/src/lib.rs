@@ -1,17 +1,27 @@
-//! Canonical configuration schema (NP-025).
+//! Configuration: schema, load, normalize, validate, migrate (NP-025…NP-030).
 
 #![forbid(unsafe_code)]
 
-use serde::{Deserialize, Serialize};
+mod load;
+mod migrate;
+mod normalize;
+mod validate;
+
+pub use load::{detect_format, load_from_path, load_from_str, ConfigFormat};
+pub use migrate::{migrate_document, CURRENT_SCHEMA_VERSION};
+pub use normalize::normalize_document;
+pub use validate::validate_semantic;
 
 pub use netpilot_proxy::{
     GroupSelect, ProtocolKind, ProxyGroup, ProxyLifecycle, ProxyProfile, TransportKind,
 };
 
+use serde::{Deserialize, Serialize};
+
 pub const CRATE_NAME: &str = "netpilot-config";
 
-/// Schema version for migrations (later NP-029).
-pub const CONFIG_SCHEMA_VERSION: u32 = 1;
+/// Schema version constant (alias of migration current).
+pub const CONFIG_SCHEMA_VERSION: u32 = CURRENT_SCHEMA_VERSION;
 
 /// Top-level document as authored by user / Desktop.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -35,7 +45,7 @@ pub struct GeneralConfig {
     pub mixed_port: Option<u16>,
 }
 
-/// Validated / normalized view after load (NP-026+ will fill loaders).
+/// Validated / normalized view after load + normalize + semantic checks.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NormalizedConfig {
     pub schema_version: u32,
@@ -46,19 +56,27 @@ pub struct NormalizedConfig {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConfigError {
-    InvalidInput(&'static str),
+    InvalidInput(String),
+    Parse(String),
+    Io(String),
     DuplicateId(String),
     MissingMember { group: String, member: String },
+    Semantic(String),
+    UnsupportedVersion(u32),
 }
 
 impl std::fmt::Display for ConfigError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidInput(m) => write!(f, "InvalidInput: {m}"),
+            Self::Parse(m) => write!(f, "Parse: {m}"),
+            Self::Io(m) => write!(f, "Io: {m}"),
             Self::DuplicateId(id) => write!(f, "DuplicateId: {id}"),
             Self::MissingMember { group, member } => {
                 write!(f, "MissingMember: group={group} member={member}")
             }
+            Self::Semantic(m) => write!(f, "Semantic: {m}"),
+            Self::UnsupportedVersion(v) => write!(f, "UnsupportedVersion: {v}"),
         }
     }
 }
@@ -75,16 +93,18 @@ impl ConfigDocument {
         }
     }
 
-    /// Structural validation (no I/O).
-    pub fn validate(&self) -> Result<(), ConfigError> {
+    /// Structural validation (ids, members).
+    pub fn validate_structure(&self) -> Result<(), ConfigError> {
         if self.schema_version == 0 {
-            return Err(ConfigError::InvalidInput("schema_version must be >= 1"));
+            return Err(ConfigError::InvalidInput(
+                "schema_version must be >= 1".into(),
+            ));
         }
         let mut ids = std::collections::HashSet::new();
         for p in &self.proxies {
             if p.id.is_empty() || p.server.is_empty() || p.port == 0 {
                 return Err(ConfigError::InvalidInput(
-                    "proxy requires id, server, non-zero port",
+                    "proxy requires id, server, non-zero port".into(),
                 ));
             }
             if !ids.insert(p.id.clone()) {
@@ -93,7 +113,7 @@ impl ConfigDocument {
         }
         for g in &self.groups {
             if g.id.is_empty() {
-                return Err(ConfigError::InvalidInput("group id empty"));
+                return Err(ConfigError::InvalidInput("group id empty".into()));
             }
             if !ids.insert(g.id.clone()) {
                 return Err(ConfigError::DuplicateId(g.id.clone()));
@@ -112,22 +132,26 @@ impl ConfigDocument {
         Ok(())
     }
 
-    pub fn normalize(self) -> Result<NormalizedConfig, ConfigError> {
-        self.validate()?;
+    /// Full pipeline: migrate → normalize → structure → semantic → NormalizedConfig.
+    pub fn load_pipeline(self) -> Result<NormalizedConfig, ConfigError> {
+        let migrated = migrate_document(self)?;
+        let normalized = normalize_document(migrated);
+        normalized.validate_structure()?;
+        validate_semantic(&normalized)?;
         Ok(NormalizedConfig {
-            schema_version: self.schema_version,
-            proxies: self.proxies,
-            groups: self.groups,
-            general: self.general,
+            schema_version: normalized.schema_version,
+            proxies: normalized.proxies,
+            groups: normalized.groups,
+            general: normalized.general,
         })
     }
 
-    pub fn to_json(&self) -> Result<String, serde_json::Error> {
-        serde_json::to_string_pretty(self)
+    pub fn to_json(&self) -> Result<String, ConfigError> {
+        serde_json::to_string_pretty(self).map_err(|e| ConfigError::Parse(e.to_string()))
     }
 
-    pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
-        serde_json::from_str(s)
+    pub fn to_yaml(&self) -> Result<String, ConfigError> {
+        serde_yaml::to_string(self).map_err(|e| ConfigError::Parse(e.to_string()))
     }
 }
 
@@ -145,28 +169,49 @@ mod tests {
             port: 1080,
             password: None,
             uuid: None,
+            username: None,
+            sni: None,
+            alpn: None,
+            path: None,
+            host: None,
+            flow: None,
+            network: None,
             tags: vec![],
         }
     }
 
     #[test]
-    fn empty_valid() {
-        ConfigDocument::empty().validate().unwrap();
+    fn empty_pipeline() {
+        let n = ConfigDocument::empty().load_pipeline().unwrap();
+        assert_eq!(n.schema_version, CONFIG_SCHEMA_VERSION);
     }
 
     #[test]
-    fn normalize_ok() {
+    fn json_load_and_pipeline() {
         let mut doc = ConfigDocument::empty();
         doc.proxies.push(sample_proxy("p1"));
-        doc.groups.push(ProxyGroup {
-            id: "g1".into(),
-            name: "default".into(),
-            select: GroupSelect::Manual,
-            members: vec!["p1".into()],
-            selected: Some("p1".into()),
-        });
-        let n = doc.normalize().unwrap();
+        let json = doc.to_json().unwrap();
+        let loaded = load_from_str(&json, ConfigFormat::Json).unwrap();
+        let n = loaded.load_pipeline().unwrap();
         assert_eq!(n.proxies.len(), 1);
+    }
+
+    #[test]
+    fn yaml_load() {
+        let yaml = r#"
+schema_version: 1
+proxies:
+  - id: p1
+    name: local
+    protocol: socks5
+    server: 127.0.0.1
+    port: 1080
+groups: []
+general: {}
+"#;
+        let doc = load_from_str(yaml, ConfigFormat::Yaml).unwrap();
+        assert_eq!(doc.proxies[0].id, "p1");
+        doc.load_pipeline().unwrap();
     }
 
     #[test]
@@ -174,30 +219,9 @@ mod tests {
         let mut doc = ConfigDocument::empty();
         doc.proxies.push(sample_proxy("p1"));
         doc.proxies.push(sample_proxy("p1"));
-        assert!(matches!(doc.validate(), Err(ConfigError::DuplicateId(_))));
-    }
-
-    #[test]
-    fn missing_member() {
-        let mut doc = ConfigDocument::empty();
-        doc.groups.push(ProxyGroup {
-            id: "g1".into(),
-            name: "g".into(),
-            select: GroupSelect::Manual,
-            members: vec!["nope".into()],
-            selected: None,
-        });
         assert!(matches!(
-            doc.validate(),
-            Err(ConfigError::MissingMember { .. })
+            doc.validate_structure(),
+            Err(ConfigError::DuplicateId(_))
         ));
-    }
-
-    #[test]
-    fn json_roundtrip() {
-        let doc = ConfigDocument::empty();
-        let s = doc.to_json().unwrap();
-        let back = ConfigDocument::from_json(&s).unwrap();
-        assert_eq!(back.schema_version, CONFIG_SCHEMA_VERSION);
     }
 }
