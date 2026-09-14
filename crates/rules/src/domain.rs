@@ -16,9 +16,7 @@ pub fn domain_matches(kind: DomainMatchKind, pattern: &str, host: &str) -> bool 
     }
     match kind {
         DomainMatchKind::Exact => host == pattern,
-        DomainMatchKind::Suffix => {
-            host == pattern || host.ends_with(&format!(".{pattern}"))
-        }
+        DomainMatchKind::Suffix => host == pattern || host.ends_with(&format!(".{pattern}")),
         DomainMatchKind::Keyword => host.contains(&pattern),
     }
 }
@@ -62,7 +60,15 @@ mod tests {
 
     #[test]
     fn keyword() {
-        assert!(domain_matches(DomainMatchKind::Keyword, "ads", "ads.foo.com"));
-        assert!(!domain_matches(DomainMatchKind::Keyword, "ads", "example.com"));
+        assert!(domain_matches(
+            DomainMatchKind::Keyword,
+            "ads",
+            "ads.foo.com",
+        ));
+        assert!(!domain_matches(
+            DomainMatchKind::Keyword,
+            "ads",
+            "example.com",
+        ));
     }
 }

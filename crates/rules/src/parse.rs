@@ -42,10 +42,7 @@ pub fn parse_rule_line(line: &str) -> Result<Option<Rule>, ParseError> {
             if parts.len() < 3 {
                 return Err(ParseError::InvalidSyntax(raw.to_string()));
             }
-            (
-                RuleMatcher::Domain(parts[1].to_ascii_lowercase()),
-                parts[2],
-            )
+            (RuleMatcher::Domain(parts[1].to_ascii_lowercase()), parts[2])
         }
         "DOMAIN-SUFFIX" => {
             if parts.len() < 3 {
@@ -103,10 +100,7 @@ mod tests {
         let r = parse_rule_line("DOMAIN-SUFFIX,Google.COM,PROXY")
             .unwrap()
             .unwrap();
-        assert_eq!(
-            r.matcher,
-            RuleMatcher::DomainSuffix("google.com".into())
-        );
+        assert_eq!(r.matcher, RuleMatcher::DomainSuffix("google.com".into()));
         assert_eq!(r.decision.outbound, "PROXY");
     }
 

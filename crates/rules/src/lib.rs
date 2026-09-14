@@ -114,9 +114,7 @@ impl RuleIndex {
             let matched = match &rule.matcher {
                 RuleMatcher::Domain(d) => domain_matches(DomainMatchKind::Exact, d, &host),
                 RuleMatcher::DomainSuffix(d) => domain_matches(DomainMatchKind::Suffix, d, &host),
-                RuleMatcher::DomainKeyword(k) => {
-                    domain_matches(DomainMatchKind::Keyword, k, &host)
-                }
+                RuleMatcher::DomainKeyword(k) => domain_matches(DomainMatchKind::Keyword, k, &host),
                 RuleMatcher::MatchAll => true,
                 RuleMatcher::IpCidr(_) => false,
             };
