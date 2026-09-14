@@ -16,10 +16,10 @@ use netpilot_subscription::{
     SubscriptionProfile,
 };
 
-#[cfg(feature = "real-http")]
-use netpilot_subscription::UreqFetcher;
 #[cfg(not(feature = "real-http"))]
 use netpilot_subscription::MockFetcher;
+#[cfg(feature = "real-http")]
+use netpilot_subscription::UreqFetcher;
 
 /// Shared flag so IPC `runtime.shutdown` can stop the accept loop.
 pub struct ServiceControl {
