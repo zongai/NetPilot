@@ -99,9 +99,7 @@ impl WintunSession {
                             let exports = lib.probe_exports();
                             if exports.is_empty() {
                                 self.state = WintunSessionState::Failed;
-                                return Err(TunError::Io(
-                                    "wintun.dll loaded but no known exports",
-                                ));
+                                return Err(TunError::Io("wintun.dll loaded but no known exports"));
                             }
                             self.state = WintunSessionState::LibraryLoaded;
                         }
