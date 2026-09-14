@@ -27,7 +27,6 @@ use std::net::TcpStream;
 use std::time::Duration;
 
 use netpilot_proxy::{ProtocolKind, ProxyProfile};
-use netpilot_transport_tcp::{dial_tcp, TcpDialRequest};
 
 pub const CRATE_NAME: &str = "netpilot-outbound";
 
@@ -142,12 +141,10 @@ pub struct DialReport {
 /// Direct TCP to target (no proxy).
 pub fn dial_direct(req: &DialRequest) -> Result<(OutboundStream, DialReport), OutboundError> {
     let started = std::time::Instant::now();
-    let tcp_req = TcpDialRequest::new(&req.target_host, req.target_port).with_timeout(req.timeout);
-    // dial_tcp only probes; we need a live stream.
     let addr = format!("{}:{}", req.target_host.trim(), req.target_port);
     let addrs = addr
         .to_socket_addrs_safe()
-        .map_err(|e| OutboundError::Dial(e))?;
+        .map_err(OutboundError::Dial)?;
     let deadline = started + req.timeout;
     let mut last = OutboundError::Dial("no address".into());
     for a in addrs {
@@ -176,7 +173,6 @@ pub fn dial_direct(req: &DialRequest) -> Result<(OutboundStream, DialReport), Ou
             Err(e) => last = OutboundError::Dial(e.to_string()),
         }
     }
-    let _ = tcp_req;
     Err(last)
 }
 

@@ -16,7 +16,6 @@ tls-rustls = ["dep:rustls", "dep:rustls-pki-types", "dep:webpki-roots"]
 [dependencies]
 netpilot-proxy = { path = "../proxy" }
 netpilot-protocol-common = { path = "../protocols/common" }
-netpilot-transport-tcp = { path = "../transports/tcp" }
 sha2 = "0.10"
 hex = "0.4"
 aes-gcm = "0.10"
