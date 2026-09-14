@@ -91,7 +91,9 @@ impl PipeServerConfig {
 pub enum PipeError {
     InvalidInput(&'static str),
     FailedPrecondition(&'static str),
-    Timeout { op: &'static str },
+    Timeout {
+        op: &'static str,
+    },
     Cancelled,
     Unavailable(&'static str),
     /// OS bind not wired yet on this build/target.
@@ -233,7 +235,9 @@ impl NamedPipeServer {
         }
         #[cfg(not(windows))]
         {
-            Err(PipeError::Unimplemented("named pipe accept requires Windows"))
+            Err(PipeError::Unimplemented(
+                "named pipe accept requires Windows",
+            ))
         }
     }
 
