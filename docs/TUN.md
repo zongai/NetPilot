@@ -14,3 +14,4 @@ Crate: `netpilot-tun`.
 | 070 | `BypassPolicy` loopback / link-local / private |
 
 Real Wintun FFI and privileged route application are **out of scope** for these tasks; mocks keep CI deterministic on `windows-latest` without driver install.
+
