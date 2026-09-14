@@ -45,17 +45,9 @@ pub struct ScriptModule {
 }
 
 /// Capability-restricted sandbox boundary (no interpreter embedded yet).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ScriptSandbox {
     pub limits: ScriptLimits,
-}
-
-impl Default for ScriptSandbox {
-    fn default() -> Self {
-        Self {
-            limits: ScriptLimits::default(),
-        }
-    }
 }
 
 impl ScriptSandbox {
@@ -66,10 +58,10 @@ impl ScriptSandbox {
         if module.source.len() > self.limits.max_memory_bytes {
             return Err(ScriptError::LimitExceeded("source too large"));
         }
-        if module.source.contains("std::net") || module.source.contains("TcpStream") {
-            if !self.limits.allow_network {
-                return Err(ScriptError::Denied("network not allowed"));
-            }
+        if (module.source.contains("std::net") || module.source.contains("TcpStream"))
+            && !self.limits.allow_network
+        {
+            return Err(ScriptError::Denied("network not allowed"));
         }
         Ok(())
     }
