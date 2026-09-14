@@ -29,10 +29,16 @@ jobs:
           targets: x86_64-pc-windows-msvc
           components: rustfmt, clippy
 
-      - name: Setup .NET 8
+      - name: Setup .NET 8 (pin via global.json)
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: |
+            8.0.x
+
+      - name: Verify dotnet SDK
+        run: |
+          dotnet --list-sdks
+          dotnet --version
 
       - name: Cargo fmt / clippy (core surface)
         run: |
@@ -45,8 +51,11 @@ jobs:
       - name: Publish Desktop GUI (WinUI unpackaged, self-contained)
         working-directory: apps/desktop
         run: |
-          dotnet restore NetPilot.Desktop.csproj
-          dotnet publish NetPilot.Desktop.csproj -c Release -r win-x64 --self-contained true -o "${{ github.workspace }}/dist/desktop"
+          dotnet restore NetPilot.Desktop.csproj -r win-x64
+          dotnet publish NetPilot.Desktop.csproj -c Release -r win-x64 --self-contained true `
+            -p:Platform=x64 `
+            -p:PublishReadyToRun=false `
+            -o "${{ github.workspace }}/dist/desktop"
 
       - name: Stage package layout
         shell: pwsh
@@ -72,7 +81,7 @@ jobs:
         shell: pwsh
         run: |
           $src = Join-Path $env:GITHUB_WORKSPACE "dist/NetPilot-win-x64"
-          $zip = Join-Path $env:GITHUB_WORKSPACE "dist/NetPilot-0.1.0-win-x64.zip"
+          $zip = Join-Path $env:GITHUB_WORKSPACE "dist/NetPilot-win-x64.zip"
           if (Test-Path $zip) { Remove-Item $zip }
           Compress-Archive -Path (Join-Path $src "*") -DestinationPath $zip
           Get-Item $zip | Format-List FullName, Length
@@ -81,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: NetPilot-win-x64-full
-          path: dist/NetPilot-0.1.0-win-x64.zip
+          path: dist/NetPilot-win-x64.zip
           if-no-files-found: error
 
       - name: Attach to GitHub Release (tags only)
@@ -89,7 +98,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/NetPilot-0.1.0-win-x64.zip
+            dist/NetPilot-win-x64.zip
             target/release/netpilot-core.exe
           fail_on_unmatched_files: false
         env:
