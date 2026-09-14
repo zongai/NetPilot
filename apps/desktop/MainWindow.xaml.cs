@@ -9,7 +9,23 @@ namespace NetPilot.Desktop;
 
 public sealed partial class MainWindow : Window
 {
-    private readonly IIpcService _ipc = new LoopbackIpcService();
+    // Prefer real named pipe; fall back to loopback for design-time without Core.
+    private readonly IIpcService _ipc = CreateIpc();
+
+    private static IIpcService CreateIpc()
+    {
+        try
+        {
+            var pipe = new NamedPipeIpcService();
+            // Connect is async — RuntimeStateViewModel will call ConnectAsync via health.
+            return pipe;
+        }
+        catch
+        {
+            return new LoopbackIpcService();
+        }
+    }
+
 
     public RuntimeStateViewModel Runtime { get; }
     public ProxyListViewModel Proxies { get; } = new();

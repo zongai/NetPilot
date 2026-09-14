@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -6,6 +7,8 @@ namespace NetPilot.Desktop.Wpf;
 public partial class MainWindow : Window
 {
     private bool _ready;
+    private readonly CoreIpcClient _ipc = new();
+    private string _coreState = "disconnected";
 
     public MainWindow()
     {
@@ -13,46 +16,60 @@ public partial class MainWindow : Window
         _ready = true;
 
         if (NavList.Items.Count > 0)
-        {
             NavList.SelectedIndex = 0;
-        }
         else
-        {
             ShowPage("home");
+
+        Loaded += async (_, _) => await TryConnectCoreAsync();
+        Closed += (_, _) => _ipc.Dispose();
+    }
+
+    private async Task TryConnectCoreAsync()
+    {
+        try
+        {
+            StatusText.Text = "Connecting to Core…";
+            await _ipc.ConnectAsync(3000);
+            var resp = await _ipc.RequestAsync("health.check");
+            _coreState = resp.TryGetProperty("payload", out var payload)
+                && payload.TryGetProperty("runtime_state", out var st)
+                ? st.GetString() ?? "unknown"
+                : "connected";
+            StatusText.Text = $"Core: {_coreState}";
+            if (NavList.SelectedItem is ListBoxItem { Tag: string tag })
+                ShowPage(tag);
+        }
+        catch (Exception ex)
+        {
+            _coreState = "disconnected";
+            StatusText.Text = "Core offline (start netpilot-core.exe)";
+            System.Diagnostics.Debug.WriteLine(ex);
         }
     }
 
     private void NavList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!_ready)
-        {
-            return;
-        }
-
+        if (!_ready) return;
         if (NavList.SelectedItem is ListBoxItem item && item.Tag is string tag)
-        {
             ShowPage(tag);
-        }
     }
 
     private void ShowPage(string tag)
     {
-        if (BodyText is null || StatusText is null)
-        {
-            return;
-        }
+        if (BodyText is null || StatusText is null) return;
 
         BodyText.Text = tag switch
         {
             "home" =>
                 "NetPilot Home\n\n" +
-                "Core: netpilot-core.exe (rules, DNS, TUN, subscription)\n" +
-                "IPC: named pipe (loopback until connected)\n\n" +
-                "Start Core alongside this GUI for the full control plane.\n" +
-                "This window should stay open until you close it.",
+                $"Core IPC: {(_ipc.IsConnected ? "connected" : "disconnected")}\n" +
+                $"Runtime: {_coreState}\n" +
+                "Pipe: \\\\.\\pipe\\netpilot-core\n\n" +
+                "Start netpilot-core.exe first (or use Start-NetPilot.cmd).\n" +
+                "Use Help → Refresh Core to reconnect.",
             "proxies" =>
                 "Proxies\n\nManaged by Core ProxyProfile / groups.\n" +
-                "Use subscription update to import airport nodes.",
+                "Live list will bind to IPC in a later increment.",
             "rules" =>
                 "Rules\n\nClash-like rule engine in Core (domain / IP / process).",
             "connections" =>
@@ -66,20 +83,28 @@ public partial class MainWindow : Window
                 "Airport URL → fetch → decode → parse → ProxyProfile.\n" +
                 "Formats: URI list, Clash YAML, Sing-box JSON.",
             "settings" =>
-                "Settings\n\nIPC endpoint, theme, update policy (later).",
+                "Settings\n\nIPC: \\\\.\\pipe\\netpilot-core\n" +
+                "Operations: health.check, runtime.state, runtime.shutdown, ping",
             _ => tag,
         };
-        StatusText.Text = $"Page: {tag}";
+        StatusText.Text = $"Page: {tag} | Core: {_coreState}";
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e) => Close();
 
-    private void About_Click(object sender, RoutedEventArgs e)
+    private async void About_Click(object sender, RoutedEventArgs e)
     {
+        string extra = _ipc.IsConnected ? $"\nCore state: {_coreState}" : "\nCore: not connected";
         MessageBox.Show(
-            "NetPilot Desktop (WPF)\nVersion 0.1.1\n\nUI shell for netpilot-core.exe",
+            "NetPilot Desktop (WPF)\nVersion 0.1.2\n" + extra,
             "About NetPilot",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
+        await Task.CompletedTask;
+    }
+
+    private async void RefreshCore_Click(object sender, RoutedEventArgs e)
+    {
+        await TryConnectCoreAsync();
     }
 }

@@ -116,3 +116,13 @@ cargo build -p netpilot-core --release
 ```
 
 Place a signed `wintun.dll` next to the Core binary when enabling the Windows TUN path (see `docs/TUN.md`).
+
+
+## Core IPC (v0.1.3+)
+
+`netpilot-core.exe` stays resident and listens on `\\.\pipe\netpilot-core`.
+
+- Protocol: newline-delimited JSON `IpcEnvelope`
+- Ops: `health.check`, `health.ready`, `runtime.state`, `runtime.shutdown`, `ping`
+- Smoke exit: set `NETPILOT_SMOKE_ONLY=1`
+- GUI: `Start-NetPilot.cmd` starts Core then WPF Desktop

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 license.workspace = true
 repository.workspace = true
-description = "NetPilot Core — runtime, routing, DNS/TUN surfaces, subscription pipeline"
+description = "NetPilot Core — resident runtime + named-pipe IPC"
 
 [[bin]]
 name = "netpilot-core"
@@ -12,6 +12,8 @@ path = "src/main.rs"
 
 [dependencies]
 netpilot-core-lib = { path = "../../crates/core" }
+netpilot-ipc = { path = "../../crates/ipc" }
+netpilot-os-pipe = { path = "../../crates/os-pipe" }
 netpilot-proxy = { path = "../../crates/proxy" }
 netpilot-rules = { path = "../../crates/rules" }
 netpilot-dns = { path = "../../crates/dns" }
@@ -21,6 +23,7 @@ netpilot-diagnostics = { path = "../../crates/diagnostics" }
 netpilot-subscription = { path = "../../crates/subscription" }
 netpilot-protocol-common = { path = "../../crates/protocols/common" }
 netpilot-transport-tls = { path = "../../crates/transports/tls" }
+serde_json = "1"
 
 [lints]
 workspace = true

@@ -1,0 +1,13 @@
+[package]
+name = "netpilot-os-pipe"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+repository.workspace = true
+description = "Windows named-pipe transport for NetPilot IPC"
+
+[lib]
+path = "src/lib.rs"
+
+[lints]
+workspace = true

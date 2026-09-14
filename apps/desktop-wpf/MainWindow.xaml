@@ -13,6 +13,7 @@
         <MenuItem Header="E_xit" Click="Exit_Click"/>
       </MenuItem>
       <MenuItem Header="_Help">
+        <MenuItem Header="_Refresh Core" Click="RefreshCore_Click"/>
         <MenuItem Header="_About" Click="About_Click"/>
       </MenuItem>
     </Menu>
