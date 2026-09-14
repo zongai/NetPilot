@@ -139,7 +139,8 @@ impl IpcEnvelope {
 
     /// Reject unsupported protocol versions before handling.
     pub fn validate_version(&self) -> Result<(), EnvelopeError> {
-        if self.protocol_version < PROTOCOL_VERSION_MIN || self.protocol_version > PROTOCOL_VERSION {
+        if self.protocol_version < PROTOCOL_VERSION_MIN || self.protocol_version > PROTOCOL_VERSION
+        {
             return Err(EnvelopeError::UnsupportedVersion {
                 got: self.protocol_version,
                 min: PROTOCOL_VERSION_MIN,
