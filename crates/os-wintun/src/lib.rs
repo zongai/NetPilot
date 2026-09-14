@@ -58,7 +58,6 @@ mod win {
         fn GetProcAddress(hModule: RawHandle, lpProcName: *const u8) -> *const core::ffi::c_void;
         fn GetLastError() -> u32;
         fn WaitForSingleObject(hHandle: RawHandle, dwMilliseconds: u32) -> u32;
-        fn CloseHandle(hObject: RawHandle) -> i32;
     }
 
     const INVALID: RawHandle = 0 as RawHandle;
