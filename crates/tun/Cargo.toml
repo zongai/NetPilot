@@ -8,9 +8,12 @@ repository.workspace = true
 [lib]
 path = "src/lib.rs"
 
-[lints]
-workspace = true
-
 [features]
 default = []
-wintun-native = []
+wintun-native = ["dep:netpilot-os-wintun"]
+
+[dependencies]
+netpilot-os-wintun = { path = "../os-wintun", optional = true }
+
+[lints]
+workspace = true

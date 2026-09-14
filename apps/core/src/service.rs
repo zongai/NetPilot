@@ -11,6 +11,9 @@ use netpilot_ipc::{
     RouteError, RouteOutcome, DEFAULT_PIPE_NAME,
 };
 use netpilot_os_pipe::{bare_name, NamedPipeListener, PipeSession, PipeTransportError};
+use netpilot_transport_tcp::{dial_tcp, TcpDialRequest};
+use netpilot_tun::{WintunDllPath, WintunSession, WintunSessionState};
+use netpilot_routing::{parse_rules, RouteRequest, RoutingEngine, RuleIndex};
 use netpilot_subscription::{
     run_subscription_pipeline, FilterRule, RenameRule, SubscriptionFetcher, SubscriptionManager,
     SubscriptionProfile,
@@ -268,6 +271,150 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
                 .with_payload(serde_json::json!({ "id": id, "removed": removed })),
         )
     });
+
+
+    // --- Rules engine (shared) ---
+    let engine: Arc<Mutex<Option<RoutingEngine>>> = Arc::new(Mutex::new(None));
+
+    let engine_load = engine.clone();
+    router.register("rules.load", move |req| {
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
+        let text = payload
+            .get("text")
+            .and_then(|v| v.as_str())
+            .ok_or(RouteError::InvalidInput("payload.text required"))?;
+        let rules = match parse_rules(text) {
+            Ok(r) => r,
+            Err(e) => {
+                return err_resp(req, "invalid_argument", e.to_string(), 400);
+            }
+        };
+        let count = rules.len();
+        let eng = RoutingEngine::new(RuleIndex::new(rules));
+        let mut g = engine_load
+            .lock()
+            .map_err(|_| RouteError::Internal("rules lock poisoned"))?;
+        *g = Some(eng);
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                .with_payload(serde_json::json!({ "loaded": count })),
+        )
+    });
+
+    let engine_decide = engine.clone();
+    router.register("rules.decide", move |req| {
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
+        let mut rreq = RouteRequest::default();
+        if let Some(d) = payload.get("domain").and_then(|v| v.as_str()) {
+            rreq = RouteRequest::domain(d);
+        }
+        if let Some(ip) = payload.get("ip").and_then(|v| v.as_str()) {
+            rreq.ip = Some(ip.to_string());
+        }
+        if let Some(port) = payload.get("port").and_then(|v| v.as_u64()) {
+            rreq.port = Some(port as u16);
+        }
+        let g = engine_decide
+            .lock()
+            .map_err(|_| RouteError::Internal("rules lock poisoned"))?;
+        let Some(eng) = g.as_ref() else {
+            return err_resp(
+                req,
+                "failed_precondition",
+                "no rules loaded; call rules.load first".into(),
+                412,
+            );
+        };
+        let (decision, explanation) = eng.decide(&rreq);
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
+                serde_json::json!({
+                    "outbound": decision.outbound,
+                    "explanation": explanation.summary(),
+                    "matcher": explanation.matcher_kind,
+                    "priority": explanation.priority,
+                }),
+            ),
+        )
+    });
+
+    router.register("outbound.tcp_probe", move |req| {
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
+        let host = payload
+            .get("host")
+            .and_then(|v| v.as_str())
+            .ok_or(RouteError::InvalidInput("payload.host required"))?;
+        let port = payload
+            .get("port")
+            .and_then(|v| v.as_u64())
+            .ok_or(RouteError::InvalidInput("payload.port required"))? as u16;
+        let timeout_ms = payload
+            .get("timeout_ms")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(3000);
+        let dial_req = TcpDialRequest::new(host, port)
+            .with_timeout(Duration::from_millis(timeout_ms.max(100)));
+        match dial_tcp(&dial_req) {
+            Ok(r) => Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({
+                        "peer": r.peer,
+                        "local": r.local,
+                        "elapsed_ms": r.elapsed_ms,
+                        "ok": true,
+                    })),
+            ),
+            Err(e) => err_resp(req, "unavailable", e.to_string(), 503),
+        }
+    });
+
+    router.register("tun.wintun_probe", move |req| {
+        let mut session = WintunSession::new(
+            Default::default(),
+            WintunDllPath::BesideExecutable,
+        );
+        let load = session.load_library();
+        let state = format!("{:?}", session.state());
+        let mut native = serde_json::json!({
+            "attempted": true,
+            "session_state": state,
+            "load_ok": load.is_ok(),
+        });
+        #[cfg(windows)]
+        {
+            match netpilot_os_wintun::load_first_available() {
+                Ok(lib) => {
+                    native["dll_path"] = serde_json::json!(lib.path().display().to_string());
+                    native["exports"] = serde_json::json!(lib.probe_exports());
+                    native["dll_loaded"] = serde_json::json!(true);
+                }
+                Err(e) => {
+                    native["dll_loaded"] = serde_json::json!(false);
+                    native["dll_error"] = serde_json::json!(e.to_string());
+                }
+            }
+        }
+        #[cfg(not(windows))]
+        {
+            native["dll_loaded"] = serde_json::json!(false);
+            native["dll_error"] = serde_json::json!("unsupported platform");
+        }
+        let _ = load;
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                .with_payload(native),
+        )
+    });
+
 
     router
 }

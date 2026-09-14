@@ -27,6 +27,7 @@ members = [
     "crates/testkit",
     "crates/subscription",
     "crates/os-pipe",
+    "crates/os-wintun",
 ]
 
 [workspace.package]

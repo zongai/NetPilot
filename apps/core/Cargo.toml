@@ -21,12 +21,15 @@ netpilot-os-pipe = { path = "../../crates/os-pipe" }
 netpilot-proxy = { path = "../../crates/proxy" }
 netpilot-rules = { path = "../../crates/rules" }
 netpilot-dns = { path = "../../crates/dns" }
-netpilot-tun = { path = "../../crates/tun" }
+netpilot-tun = { path = "../../crates/tun", features = ["wintun-native"] }
 netpilot-process = { path = "../../crates/process" }
 netpilot-diagnostics = { path = "../../crates/diagnostics" }
 netpilot-subscription = { path = "../../crates/subscription" }
 netpilot-protocol-common = { path = "../../crates/protocols/common" }
 netpilot-transport-tls = { path = "../../crates/transports/tls" }
+netpilot-transport-tcp = { path = "../../crates/transports/tcp" }
+netpilot-routing = { path = "../../crates/routing" }
+netpilot-os-wintun = { path = "../../crates/os-wintun" }
 serde_json = "1"
 
 [lints]

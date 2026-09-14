@@ -140,3 +140,15 @@ Core exposes:
 | `subscription.remove` | `{ "id" }` |
 
 Feature `real-http` (default on Core) uses `ureq` for outbound fetches. Library default remains mock for CI.
+
+
+## Rules / Outbound / Wintun IPC (v0.1.5+)
+
+| Op | Payload |
+|----|---------|
+| `rules.load` | `{ "text": "DOMAIN-SUFFIX,google.com,PROXY\nMATCH,DIRECT\n" }` |
+| `rules.decide` | `{ "domain"?: "...", "ip"?: "...", "port"?: 443 }` |
+| `outbound.tcp_probe` | `{ "host", "port", "timeout_ms?" }` |
+| `tun.wintun_probe` | — (loads `wintun.dll` if present beside exe) |
+
+Place official `wintun.dll` next to `netpilot-core.exe` for native probe success.

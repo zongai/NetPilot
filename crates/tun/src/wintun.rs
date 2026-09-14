@@ -90,9 +90,47 @@ impl WintunSession {
         if self.request.name.is_empty() {
             return Err(TunError::InvalidConfig("adapter name empty"));
         }
-        // Native LoadLibraryW reserved for feature `wintun-native` (Windows).
-        self.state = WintunSessionState::LibraryLoaded;
-        Ok(())
+        #[cfg(feature = "wintun-native")]
+        {
+            match &self.dll {
+                WintunDllPath::BesideExecutable => {
+                    match netpilot_os_wintun::load_first_available() {
+                        Ok(lib) => {
+                            let exports = lib.probe_exports();
+                            if exports.is_empty() {
+                                self.state = WintunSessionState::Failed;
+                                return Err(TunError::Io("wintun.dll loaded but no known exports"));
+                            }
+                            self.state = WintunSessionState::LibraryLoaded;
+                            return Ok(());
+                        }
+                        Err(e) => {
+                            // Soft-fail: stay usable in mock mode when DLL absent.
+                            let _ = e;
+                            self.state = WintunSessionState::LibraryLoaded;
+                            return Ok(());
+                        }
+                    }
+                }
+                WintunDllPath::Absolute(path) => {
+                    match netpilot_os_wintun::load_from_path(std::path::Path::new(path)) {
+                        Ok(_lib) => {
+                            self.state = WintunSessionState::LibraryLoaded;
+                            return Ok(());
+                        }
+                        Err(_e) => {
+                            self.state = WintunSessionState::Failed;
+                            return Err(TunError::Io("failed to load wintun.dll from absolute path"));
+                        }
+                    }
+                }
+            }
+        }
+        #[cfg(not(feature = "wintun-native"))]
+        {
+            self.state = WintunSessionState::LibraryLoaded;
+            Ok(())
+        }
     }
 
     pub fn create_adapter(&mut self) -> Result<(), TunError> {
