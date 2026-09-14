@@ -1,11 +1,10 @@
-//! REALITY transport surface — builds on TLS client config.
+//! REALITY transport overlay (NP-119). Full uTLS fingerprint is deferred;
+//! config + TLS overlay surface is complete for dial path selection.
 
 #![forbid(unsafe_code)]
 
 pub use netpilot_protocol_common::TransportId;
-pub use netpilot_transport_tls::{
-    RealityTlsOverlay, TlsClientConfig, TlsClientSession, TlsError, TlsSessionState,
-};
+pub use netpilot_transport_tls::{RealityTlsOverlay, TlsClientConfig, TlsClientSession};
 
 pub const CRATE_NAME: &str = "netpilot-transport-reality";
 
@@ -13,26 +12,37 @@ pub fn transport_id() -> TransportId {
     TransportId::Reality
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RealityConfig {
-    pub overlay: RealityTlsOverlay,
+    pub server_name: String,
+    pub public_key: Option<String>,
+    pub short_id: Option<String>,
+    pub fingerprint: Option<String>,
 }
 
 impl RealityConfig {
     pub fn new(server_name: impl Into<String>) -> Self {
         Self {
-            overlay: RealityTlsOverlay {
-                server_name: server_name.into(),
-                public_key_redacted: true,
-                short_id: None,
-            },
+            server_name: server_name.into(),
+            public_key: None,
+            short_id: None,
+            fingerprint: None,
         }
     }
 
-    pub fn open_mock_session(&self) -> Result<TlsClientSession, TlsError> {
-        let mut session = TlsClientSession::new(self.overlay.to_tls_config())?;
-        session.connect()?;
-        Ok(session)
+    pub fn to_overlay(&self) -> RealityTlsOverlay {
+        RealityTlsOverlay {
+            server_name: self.server_name.clone(),
+            public_key_redacted: self.public_key.is_some(),
+            short_id: self.short_id.clone(),
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), &'static str> {
+        if self.server_name.trim().is_empty() {
+            return Err("reality server_name required");
+        }
+        Ok(())
     }
 }
 
@@ -46,10 +56,15 @@ mod tests {
     }
 
     #[test]
-    fn mock_session() {
-        let s = RealityConfig::new("www.example.com")
-            .open_mock_session()
-            .unwrap();
-        assert_eq!(s.state(), TlsSessionState::Connected);
+    fn overlay_redacts_key() {
+        let c = RealityConfig {
+            server_name: "www.example.com".into(),
+            public_key: Some("secret".into()),
+            short_id: Some("abcd".into()),
+            fingerprint: Some("chrome".into()),
+        };
+        let o = c.to_overlay();
+        assert!(o.public_key_redacted);
+        assert_eq!(o.short_id.as_deref(), Some("abcd"));
     }
 }

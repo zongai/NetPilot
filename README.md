@@ -32,7 +32,7 @@ Ownership boundaries, crate matrix, and non-goals: [`docs/ARCHITECTURE.md`](docs
 |------|------|
 | `apps/core` | Rust Core binary (`netpilot-core`) |
 | `apps/desktop` | WinUI 3 shell (UI only; network stays in Core) |
-| `crates/*` | Core libraries (ipc, config, rules, routing, proxy, dns, tun, process, diagnostics, …) |
+| `crates/*` | Core libraries (ipc, config, rules, routing, proxy, dns, tun, process, diagnostics, outbound, engine, …) |
 | `crates/protocols/*` | Protocol adapters (shadowsocks, vmess, vless, trojan, …) |
 | `crates/transports/*` | Transport adapters (tcp, tls, websocket, http2, grpc, reality) |
 | `docs/` | Architecture, IPC, task index, per-task specs (`docs/tasks/NP-*.md`) |
@@ -78,7 +78,9 @@ Contributors and agents must:
 
 ## Status
 
-**NP-001 … NP-144 complete** (stages S0–S9 + **S11** subscription). Workspace libraries, rule/DNS/TUN/process surfaces, protocol configs, and transport IDs are in tree.
+**NP-001 … NP-144 complete** (stages S0–S9 + **S11** subscription).
+
+Data plane (post-S11): `netpilot-outbound` (SOCKS5 / HTTP CONNECT / Trojan / VLESS / SS AEAD dialers + rustls), `netpilot-engine` (rules → dial, TUN session), full Wintun FFI in `netpilot-os-wintun`. See [`docs/DATAPLANE.md`](docs/DATAPLANE.md).
 
 | Stage | Scope |
 |-------|--------|
@@ -95,7 +97,7 @@ Contributors and agents must:
 
 Changelog: [`CHANGELOG.md`](CHANGELOG.md). Architecture: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-Production packet path still uses **mocks** in CI. Windows release builds produce `netpilot-core.exe` (see Release).
+Native Wintun requires `wintun.dll` beside Core + elevation. CI uses logical TUN when DLL is absent. Windows release builds produce `netpilot-core.exe` (see Release).
 
 ## Release
 

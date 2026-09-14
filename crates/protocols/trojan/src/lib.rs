@@ -1,4 +1,4 @@
-//! Trojan + transport compatibility (NP-120).
+//! Trojan + transport compatibility (NP-120) and dial integration notes.
 
 #![forbid(unsafe_code)]
 
@@ -11,6 +11,8 @@ pub struct TrojanConfig {
     pub endpoint: Endpoint,
     pub password_redacted: bool,
     pub transport: TransportId,
+    pub password: Option<String>,
+    pub sni: Option<String>,
 }
 
 impl TrojanConfig {
@@ -22,7 +24,15 @@ impl TrojanConfig {
             },
             password_redacted: true,
             transport: TransportId::Tls,
+            password: None,
+            sni: None,
         }
+    }
+
+    pub fn with_password(mut self, password: impl Into<String>) -> Self {
+        self.password = Some(password.into());
+        self.password_redacted = true;
+        self
     }
 
     pub fn protocol_id(&self) -> ProtocolId {

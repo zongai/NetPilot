@@ -1,0 +1,21 @@
+[package]
+name = "netpilot-engine"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+repository.workspace = true
+description = "Traffic engine: rules decide → outbound dial → TUN session control"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+netpilot-proxy = { path = "../proxy" }
+netpilot-rules = { path = "../rules" }
+netpilot-routing = { path = "../routing" }
+netpilot-outbound = { path = "../outbound" }
+netpilot-tun = { path = "../tun", features = ["wintun-native"] }
+netpilot-dns = { path = "../dns" }
+
+[lints]
+workspace = true

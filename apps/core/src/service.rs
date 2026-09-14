@@ -6,12 +6,13 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use netpilot_core_lib::{CoreRuntime, RuntimeState};
+use netpilot_engine::{start_socks_inbound, TrafficEngine};
 use netpilot_ipc::{
     register_health_handlers, ErrorBody, HealthStatus, IpcEnvelope, MessageKind, RequestRouter,
     RouteError, RouteOutcome, DEFAULT_PIPE_NAME,
 };
 use netpilot_os_pipe::{bare_name, NamedPipeListener, PipeSession, PipeTransportError};
-use netpilot_routing::{parse_rules, RouteRequest, RoutingEngine, RuleIndex};
+use netpilot_proxy::{ProtocolKind, ProxyProfile};
 use netpilot_subscription::{
     run_subscription_pipeline, FilterRule, RenameRule, SubscriptionFetcher, SubscriptionManager,
     SubscriptionProfile,
@@ -129,6 +130,9 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     let fetcher: Arc<Mutex<Box<dyn SubscriptionFetcher + Send>>> =
         Arc::new(Mutex::new(make_fetcher()));
 
+    let engine: Arc<Mutex<TrafficEngine>> = Arc::new(Mutex::new(TrafficEngine::new()));
+    let inbound: Arc<Mutex<Option<netpilot_engine::SocksInbound>>> = Arc::new(Mutex::new(None));
+
     let mgr_list = mgr.clone();
     router.register("subscription.list", move |req| {
         let guard = mgr_list
@@ -190,6 +194,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
 
     let mgr_upd = mgr.clone();
     let fetcher_upd = fetcher.clone();
+    let engine_sub = engine.clone();
     router.register("subscription.update", move |req| {
         let payload = req
             .payload
@@ -237,6 +242,19 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
                 } else {
                     Vec::new()
                 };
+                if let Some(p) = mgr_guard.get(id).cloned() {
+                    let pipe = run_subscription_pipeline(
+                        &p,
+                        &body,
+                        &FilterRule::default(),
+                        &RenameRule::default(),
+                    );
+                    if let Ok(mut eng) = engine_sub.lock() {
+                        for n in pipe.profiles {
+                            eng.add_profile(n);
+                        }
+                    }
+                }
                 Ok(
                     IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
                         .with_payload(serde_json::json!({
@@ -272,8 +290,8 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
         )
     });
 
-    // --- Rules engine (shared) ---
-    let engine: Arc<Mutex<Option<RoutingEngine>>> = Arc::new(Mutex::new(None));
+
+    // --- Traffic engine (rules + profiles + TUN + outbound) ---
 
     let engine_load = engine.clone();
     router.register("rules.load", move |req| {
@@ -285,22 +303,16 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             .get("text")
             .and_then(|v| v.as_str())
             .ok_or(RouteError::InvalidInput("payload.text required"))?;
-        let rules = match parse_rules(text) {
-            Ok(r) => r,
-            Err(e) => {
-                return err_resp(req, "invalid_argument", e.to_string(), 400);
-            }
-        };
-        let count = rules.len();
-        let eng = RoutingEngine::new(RuleIndex::new(rules));
         let mut g = engine_load
             .lock()
-            .map_err(|_| RouteError::Internal("rules lock poisoned"))?;
-        *g = Some(eng);
-        Ok(
-            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
-                .with_payload(serde_json::json!({ "loaded": count })),
-        )
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        match g.load_rules_text(text) {
+            Ok(count) => Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({ "loaded": count })),
+            ),
+            Err(e) => err_resp(req, "invalid_argument", e.to_string(), 400),
+        }
     });
 
     let engine_decide = engine.clone();
@@ -309,38 +321,328 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             .payload
             .as_ref()
             .ok_or(RouteError::InvalidInput("missing payload"))?;
-        let mut rreq = RouteRequest::default();
-        if let Some(d) = payload.get("domain").and_then(|v| v.as_str()) {
-            rreq = RouteRequest::domain(d);
-        }
-        if let Some(ip) = payload.get("ip").and_then(|v| v.as_str()) {
-            rreq.ip = Some(ip.to_string());
-        }
-        if let Some(port) = payload.get("port").and_then(|v| v.as_u64()) {
-            rreq.port = Some(port as u16);
-        }
+        let domain = payload.get("domain").and_then(|v| v.as_str());
+        let ip = payload.get("ip").and_then(|v| v.as_str());
+        let port = payload
+            .get("port")
+            .and_then(|v| v.as_u64())
+            .map(|p| p as u16);
         let g = engine_decide
             .lock()
-            .map_err(|_| RouteError::Internal("rules lock poisoned"))?;
-        let Some(eng) = g.as_ref() else {
-            return err_resp(
-                req,
-                "failed_precondition",
-                "no rules loaded; call rules.load first".into(),
-                412,
-            );
-        };
-        let (decision, explanation) = eng.decide(&rreq);
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        let r = g.decide(domain, ip, port);
         Ok(
             IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
                 serde_json::json!({
-                    "outbound": decision.outbound,
-                    "explanation": explanation.summary(),
-                    "matcher": explanation.matcher_kind,
-                    "priority": explanation.priority,
+                    "outbound": r.outbound,
+                    "explanation": r.explanation,
+                    "matcher": r.matcher,
                 }),
             ),
         )
+    });
+
+    let engine_dial = engine.clone();
+    router.register("traffic.route_dial", move |req| {
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
+        let host = payload
+            .get("host")
+            .and_then(|v| v.as_str())
+            .ok_or(RouteError::InvalidInput("payload.host required"))?;
+        let port = payload
+            .get("port")
+            .and_then(|v| v.as_u64())
+            .ok_or(RouteError::InvalidInput("payload.port required"))? as u16;
+        let mut g = engine_dial
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        match g.route_and_dial(host, port) {
+            Ok((route, report)) => Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({
+                        "outbound": route.outbound,
+                        "explanation": route.explanation,
+                        "matcher": route.matcher,
+                        "protocol": report.protocol,
+                        "server": report.server,
+                        "peer": report.peer,
+                        "elapsed_ms": report.elapsed_ms,
+                        "via": report.via,
+                    })),
+            ),
+            Err(e) => err_resp(req, "unavailable", e.to_string(), 503),
+        }
+    });
+
+    let engine_prof = engine.clone();
+    router.register("proxy.upsert", move |req| {
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
+        let id = payload
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(RouteError::InvalidInput("id"))?;
+        let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or(id);
+        let server = payload
+            .get("server")
+            .and_then(|v| v.as_str())
+            .ok_or(RouteError::InvalidInput("server"))?;
+        let port = payload
+            .get("port")
+            .and_then(|v| v.as_u64())
+            .ok_or(RouteError::InvalidInput("port"))? as u16;
+        let proto_s = payload
+            .get("protocol")
+            .and_then(|v| v.as_str())
+            .unwrap_or("socks5");
+        let protocol = ProtocolKind::parse(proto_s)
+            .ok_or(RouteError::InvalidInput("unknown protocol"))?;
+        let profile = ProxyProfile {
+            id: id.into(),
+            name: name.into(),
+            protocol,
+            transport: None,
+            server: server.into(),
+            port,
+            password: payload
+                .get("password")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            uuid: payload
+                .get("uuid")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            username: payload
+                .get("username")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            sni: payload
+                .get("sni")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            alpn: payload
+                .get("alpn")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            path: None,
+            host: None,
+            flow: None,
+            network: None,
+            tags: vec![],
+        };
+        let mut g = engine_prof
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        g.add_profile(profile);
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                .with_payload(serde_json::json!({ "id": id, "accepted": true })),
+        )
+    });
+
+    let engine_sel = engine.clone();
+    router.register("proxy.select", move |req| {
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
+        let id = payload
+            .get("id")
+            .and_then(|v| v.as_str())
+            .ok_or(RouteError::InvalidInput("id"))?;
+        let mut g = engine_sel
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        g.select_outbound(id);
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                .with_payload(serde_json::json!({ "selected": id })),
+        )
+    });
+
+    let engine_list = engine.clone();
+    router.register("proxy.list", move |req| {
+        let g = engine_list
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        let items: Vec<serde_json::Value> = g
+            .profiles()
+            .iter()
+            .map(|p| {
+                serde_json::json!({
+                    "id": p.id,
+                    "name": p.name,
+                    "server": p.server,
+                    "port": p.port,
+                    "protocol": p.protocol.as_str(),
+                })
+            })
+            .collect();
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
+                serde_json::json!({
+                    "items": items,
+                    "selected": g.selected_outbound(),
+                }),
+            ),
+        )
+    });
+
+    let engine_tun_start = engine.clone();
+    router.register("tunnel.start", move |req| {
+        let name = req
+            .payload
+            .as_ref()
+            .and_then(|p| p.get("name"))
+            .and_then(|v| v.as_str());
+        let mut g = engine_tun_start
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        match g.start_tunnel(name) {
+            Ok(st) => Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({
+                        "running": st.running,
+                        "native": st.native,
+                        "adapter": st.adapter,
+                        "state": st.state,
+                        "last_error": st.last_error,
+                    })),
+            ),
+            Err(e) => err_resp(req, "failed_precondition", e.to_string(), 500),
+        }
+    });
+
+    let engine_tun_stop = engine.clone();
+    router.register("tunnel.stop", move |req| {
+        let mut g = engine_tun_stop
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        match g.stop_tunnel() {
+            Ok(st) => Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({
+                        "running": st.running,
+                        "state": st.state,
+                    })),
+            ),
+            Err(e) => err_resp(req, "internal", e.to_string(), 500),
+        }
+    });
+
+    let engine_tun_st = engine.clone();
+    router.register("tunnel.status", move |req| {
+        let g = engine_tun_st
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        let st = g.tunnel_status();
+        let stats = g.stats();
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
+                serde_json::json!({
+                    "running": st.running,
+                    "native": st.native,
+                    "adapter": st.adapter,
+                    "state": st.state,
+                    "packets_in": st.packets_in,
+                    "packets_out": st.packets_out,
+                    "last_error": st.last_error,
+                    "stats": {
+                        "routed": stats.routed,
+                        "direct": stats.direct,
+                        "proxy": stats.proxy,
+                        "reject": stats.reject,
+                        "dial_fail": stats.dial_fail,
+                    }
+                }),
+            ),
+        )
+    });
+
+
+    let engine_in = engine.clone();
+    let inbound_start = inbound.clone();
+    router.register("inbound.socks_start", move |req| {
+        let port = req
+            .payload
+            .as_ref()
+            .and_then(|p| p.get("port"))
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0) as u16;
+        let mut slot = inbound_start
+            .lock()
+            .map_err(|_| RouteError::Internal("inbound lock poisoned"))?;
+        if let Some(existing) = slot.as_ref() {
+            return Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({
+                        "port": existing.port(),
+                        "already_running": true,
+                    })),
+            );
+        }
+        match start_socks_inbound(engine_in.clone(), port) {
+            Ok(ib) => {
+                let bound = ib.port();
+                *slot = Some(ib);
+                Ok(
+                    IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                        .with_payload(serde_json::json!({
+                            "port": bound,
+                            "listen": format!("127.0.0.1:{bound}"),
+                            "already_running": false,
+                        })),
+                )
+            }
+            Err(e) => err_resp(req, "failed_precondition", e, 500),
+        }
+    });
+
+    let inbound_stop = inbound.clone();
+    router.register("inbound.socks_stop", move |req| {
+        let mut slot = inbound_stop
+            .lock()
+            .map_err(|_| RouteError::Internal("inbound lock poisoned"))?;
+        if let Some(ib) = slot.take() {
+            ib.stop();
+        }
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                .with_payload(serde_json::json!({ "stopped": true })),
+        )
+    });
+
+    let inbound_st = inbound.clone();
+    router.register("inbound.socks_status", move |req| {
+        let slot = inbound_st
+            .lock()
+            .map_err(|_| RouteError::Internal("inbound lock poisoned"))?;
+        match slot.as_ref() {
+            Some(ib) => {
+                let s = ib.stats_snapshot();
+                Ok(
+                    IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                        .with_payload(serde_json::json!({
+                            "running": true,
+                            "port": ib.port(),
+                            "accepted": s.accepted,
+                            "active": s.active,
+                            "bytes_up": s.bytes_up,
+                            "bytes_down": s.bytes_down,
+                            "errors": s.errors,
+                        })),
+                )
+            }
+            None => Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({ "running": false })),
+            ),
+        }
     });
 
     router.register("outbound.tcp_probe", move |req| {
@@ -410,6 +712,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
                 .with_payload(native),
         )
     });
+
 
     router
 }

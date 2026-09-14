@@ -28,6 +28,8 @@ members = [
     "crates/subscription",
     "crates/os-pipe",
     "crates/os-wintun",
+    "crates/outbound",
+    "crates/engine",
 ]
 
 [workspace.package]

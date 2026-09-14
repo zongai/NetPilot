@@ -1,8 +1,4 @@
-//! Wintun session wiring surface (formal build).
-//!
-//! Real `wintun.dll` FFI is feature-gated and not linked in default CI.
-//! This module defines the load path, adapter request, and session lifecycle
-//! that a future `wintun-ffi` backend will implement.
+//! Wintun session wiring with optional native packet IO.
 
 use crate::device::{TunConfig, TunError, TunState};
 
@@ -43,13 +39,37 @@ pub enum WintunSessionState {
     Failed,
 }
 
-/// Logical Wintun session handle (no native resources in default builds).
-#[derive(Debug)]
+/// Logical Wintun session; may hold a native session when `wintun-native` + DLL available.
 pub struct WintunSession {
     request: WintunAdapterRequest,
     dll: WintunDllPath,
     state: WintunSessionState,
     capacity_ring: u32,
+    native_active: bool,
+    packets_in: u64,
+    packets_out: u64,
+    last_error: Option<String>,
+    #[cfg(all(windows, feature = "wintun-native"))]
+    native: Option<NativeBundle>,
+}
+
+#[cfg(all(windows, feature = "wintun-native"))]
+struct NativeBundle {
+    // Library must outlive session.
+    _lib: netpilot_os_wintun::WintunLibrary,
+    session: netpilot_os_wintun::WintunNativeSession,
+}
+
+impl std::fmt::Debug for WintunSession {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WintunSession")
+            .field("state", &self.state)
+            .field("adapter", &self.request.name)
+            .field("native_active", &self.native_active)
+            .field("packets_in", &self.packets_in)
+            .field("packets_out", &self.packets_out)
+            .finish()
+    }
 }
 
 impl WintunSession {
@@ -58,7 +78,13 @@ impl WintunSession {
             request,
             dll,
             state: WintunSessionState::Idle,
-            capacity_ring: 0x200000, // 2 MiB default ring (Wintun-style)
+            capacity_ring: 0x200000, // 2 MiB default ring
+            native_active: false,
+            packets_in: 0,
+            packets_out: 0,
+            last_error: None,
+            #[cfg(all(windows, feature = "wintun-native"))]
+            native: None,
         }
     }
 
@@ -85,7 +111,19 @@ impl WintunSession {
         &self.dll
     }
 
-    /// Attempt to load the library. Default builds only validate configuration.
+    pub fn is_native(&self) -> bool {
+        self.native_active
+    }
+
+    pub fn stats(&self) -> (u64, u64) {
+        (self.packets_in, self.packets_out)
+    }
+
+    pub fn last_error(&self) -> Option<&str> {
+        self.last_error.as_deref()
+    }
+
+    /// Attempt to load the library. Soft-fails to logical mode when DLL absent.
     pub fn load_library(&mut self) -> Result<(), TunError> {
         if self.request.name.is_empty() {
             return Err(TunError::InvalidConfig("adapter name empty"));
@@ -99,13 +137,19 @@ impl WintunSession {
                             let exports = lib.probe_exports();
                             if exports.is_empty() {
                                 self.state = WintunSessionState::Failed;
-                                return Err(TunError::Io("wintun.dll loaded but no known exports"));
+                                self.last_error =
+                                    Some("wintun.dll loaded but no known exports".into());
+                                return Err(TunError::Io(
+                                    "wintun.dll loaded but no known exports",
+                                ));
                             }
+                            // Keep loaded only for probe path; open_session reloads for ownership.
+                            drop(lib);
                             self.state = WintunSessionState::LibraryLoaded;
                         }
                         Err(e) => {
+                            self.last_error = Some(e.to_string());
                             // Soft-fail: stay usable in mock mode when DLL absent.
-                            let _ = e;
                             self.state = WintunSessionState::LibraryLoaded;
                         }
                     }
@@ -115,8 +159,9 @@ impl WintunSession {
                         Ok(_lib) => {
                             self.state = WintunSessionState::LibraryLoaded;
                         }
-                        Err(_e) => {
+                        Err(e) => {
                             self.state = WintunSessionState::Failed;
+                            self.last_error = Some(e.to_string());
                             return Err(TunError::Io(
                                 "failed to load wintun.dll from absolute path",
                             ));
@@ -141,15 +186,108 @@ impl WintunSession {
         Ok(())
     }
 
+    /// Start session. On Windows with native feature, attempts real adapter.
     pub fn start_session(&mut self) -> Result<(), TunError> {
         if self.state != WintunSessionState::AdapterCreated {
             return Err(TunError::FailedPrecondition("adapter not created"));
         }
+        #[cfg(all(windows, feature = "wintun-native"))]
+        {
+            let load = match &self.dll {
+                WintunDllPath::BesideExecutable => netpilot_os_wintun::load_first_available(),
+                WintunDllPath::Absolute(p) => {
+                    netpilot_os_wintun::load_from_path(std::path::Path::new(p))
+                }
+            };
+            match load {
+                Ok(lib) => match lib.open_session(
+                    &self.request.name,
+                    &self.request.tunnel_type,
+                    self.capacity_ring,
+                ) {
+                    Ok(session) => {
+                        self.native = Some(NativeBundle {
+                            _lib: lib,
+                            session,
+                        });
+                        self.native_active = true;
+                        self.state = WintunSessionState::SessionRunning;
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        self.last_error = Some(e.to_string());
+                        // Fall through to logical running for control-plane continuity.
+                    }
+                },
+                Err(e) => {
+                    self.last_error = Some(e.to_string());
+                }
+            }
+        }
+        self.native_active = false;
         self.state = WintunSessionState::SessionRunning;
         Ok(())
     }
 
+    /// Receive one IP packet (native only). `None` on timeout / no data.
+    pub fn receive_packet(&mut self, timeout_ms: u32) -> Result<Option<Vec<u8>>, TunError> {
+        if self.state != WintunSessionState::SessionRunning {
+            return Err(TunError::FailedPrecondition("session not running"));
+        }
+        #[cfg(all(windows, feature = "wintun-native"))]
+        {
+            if let Some(bundle) = self.native.as_mut() {
+                match bundle.session.receive(timeout_ms) {
+                    Ok(Some(pkt)) => {
+                        self.packets_in = self.packets_in.saturating_add(1);
+                        return Ok(Some(pkt));
+                    }
+                    Ok(None) => return Ok(None),
+                    Err(e) => {
+                        self.last_error = Some(e.to_string());
+                        return Err(TunError::Io("wintun receive failed"));
+                    }
+                }
+            }
+        }
+        let _ = timeout_ms;
+        Ok(None)
+    }
+
+    /// Send one IP packet (native only).
+    pub fn send_packet(&mut self, packet: &[u8]) -> Result<(), TunError> {
+        if self.state != WintunSessionState::SessionRunning {
+            return Err(TunError::FailedPrecondition("session not running"));
+        }
+        #[cfg(all(windows, feature = "wintun-native"))]
+        {
+            if let Some(bundle) = self.native.as_mut() {
+                return match bundle.session.send(packet) {
+                    Ok(()) => {
+                        self.packets_out = self.packets_out.saturating_add(1);
+                        Ok(())
+                    }
+                    Err(e) => {
+                        self.last_error = Some(e.to_string());
+                        Err(TunError::Io("wintun send failed"))
+                    }
+                };
+            }
+        }
+        if packet.is_empty() {
+            return Err(TunError::InvalidConfig("empty packet"));
+        }
+        // Logical mode: count only.
+        self.packets_out = self.packets_out.saturating_add(1);
+        Ok(())
+    }
+
     pub fn stop(&mut self) -> Result<(), TunError> {
+        #[cfg(all(windows, feature = "wintun-native"))]
+        {
+            self.native = None;
+        }
+        self.native_active = false;
         self.state = WintunSessionState::Closed;
         Ok(())
     }
@@ -158,7 +296,6 @@ impl WintunSession {
         self.capacity_ring
     }
 
-    /// Map session state to high-level TUN state for Core.
     pub fn as_tun_state(&self) -> TunState {
         match self.state {
             WintunSessionState::Idle | WintunSessionState::LibraryLoaded => TunState::Created,
@@ -170,7 +307,7 @@ impl WintunSession {
     }
 }
 
-/// Provider that prefers Wintun on Windows and falls back to mock semantics in CI.
+/// Provider that prefers Wintun on Windows and falls back to logical semantics in CI.
 #[derive(Debug, Default)]
 pub struct WintunTunProvider {
     opened: u32,
@@ -203,9 +340,12 @@ mod tests {
     #[test]
     fn session_lifecycle_without_native() {
         let mut p = WintunTunProvider::new();
-        let session = p.open_session(TunConfig::default()).unwrap();
+        let mut session = p.open_session(TunConfig::default()).unwrap();
         assert_eq!(session.state(), WintunSessionState::SessionRunning);
         assert_eq!(session.as_tun_state(), TunState::Running);
         assert_eq!(p.opened_count(), 1);
+        session.send_packet(&[0x45, 0, 0, 20]).unwrap();
+        assert_eq!(session.stats().1, 1);
+        session.stop().unwrap();
     }
 }
