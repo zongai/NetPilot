@@ -37,3 +37,12 @@ TUN, process attribution, service, privilege, or desktop integration changes req
 ## Scope discipline
 
 Respect each task’s `allowed_paths`. Do not drive-by refactor unrelated crates or docs.
+
+## Agent / automation rules
+
+Automated agents must follow [`AGENTS.md`](AGENTS.md) (canonical short rules) and [`docs/AGENT_WORKFLOW.md`](docs/AGENT_WORKFLOW.md) (lifecycle detail). Humans reviewing agent PRs should check:
+
+- Allow-list compliance
+- No secrets in logs or tree
+- Acceptance commands run or gaps documented
+- Human review flagged for TUN / process / privilege / desktop work

@@ -63,12 +63,16 @@ cargo clippy --workspace --all-targets -- -D warnings
 ## Task-driven development
 
 Work is split into 120 tasks (NP-001 … NP-120) across stages S0–S9.  
-See `docs/TASKS.md` and `docs/tasks/NP-###.md`.  
-Agents and contributors must:
+See `docs/TASKS.md` and `docs/tasks/NP-###.md`.
 
-1. Read README, architecture/IPC docs, and the **target task** first.
+**Agents (Codex and similar):** follow [`AGENTS.md`](AGENTS.md) and [`docs/AGENT_WORKFLOW.md`](docs/AGENT_WORKFLOW.md).
+
+Contributors and agents must:
+
+1. Read README, architecture/IPC docs, toolchain policy, and the **target task** first.
 2. Modify **only** the task’s `allowed_paths`.
 3. Plan before editing; keep IPC/API compatibility; redact secrets.
+4. Run acceptance commands; report honestly if the environment cannot run them.
 
 ## Status
 
