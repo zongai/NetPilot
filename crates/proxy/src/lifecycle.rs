@@ -17,11 +17,7 @@ impl std::fmt::Display for LifecycleError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::FailedPrecondition { from, op } => {
-                write!(
-                    f,
-                    "FailedPrecondition: cannot {op} from {}",
-                    from.as_str()
-                )
+                write!(f, "FailedPrecondition: cannot {op} from {}", from.as_str())
             }
             Self::UnknownProxy(id) => write!(f, "UnknownProxy: {id}"),
         }
@@ -55,33 +51,56 @@ impl LifecycleManager {
     }
 
     pub fn begin_validate(&mut self, id: &str) -> Result<(), LifecycleError> {
-        self.transition(id, &[ProxyLifecycle::Created, ProxyLifecycle::Stopped], ProxyLifecycle::Validating, "begin_validate")
+        self.transition(
+            id,
+            &[ProxyLifecycle::Created, ProxyLifecycle::Stopped],
+            ProxyLifecycle::Validating,
+            "begin_validate",
+        )
     }
 
     pub fn begin_start(&mut self, id: &str) -> Result<(), LifecycleError> {
         self.transition(
             id,
-            &[ProxyLifecycle::Validating, ProxyLifecycle::Stopped, ProxyLifecycle::Created],
+            &[
+                ProxyLifecycle::Validating,
+                ProxyLifecycle::Stopped,
+                ProxyLifecycle::Created,
+            ],
             ProxyLifecycle::Starting,
             "begin_start",
         )
     }
 
     pub fn mark_running(&mut self, id: &str) -> Result<(), LifecycleError> {
-        self.transition(id, &[ProxyLifecycle::Starting], ProxyLifecycle::Running, "mark_running")
+        self.transition(
+            id,
+            &[ProxyLifecycle::Starting],
+            ProxyLifecycle::Running,
+            "mark_running",
+        )
     }
 
     pub fn begin_stop(&mut self, id: &str) -> Result<(), LifecycleError> {
         self.transition(
             id,
-            &[ProxyLifecycle::Running, ProxyLifecycle::Starting, ProxyLifecycle::Validating],
+            &[
+                ProxyLifecycle::Running,
+                ProxyLifecycle::Starting,
+                ProxyLifecycle::Validating,
+            ],
             ProxyLifecycle::Stopping,
             "begin_stop",
         )
     }
 
     pub fn mark_stopped(&mut self, id: &str) -> Result<(), LifecycleError> {
-        self.transition(id, &[ProxyLifecycle::Stopping], ProxyLifecycle::Stopped, "mark_stopped")
+        self.transition(
+            id,
+            &[ProxyLifecycle::Stopping],
+            ProxyLifecycle::Stopped,
+            "mark_stopped",
+        )
     }
 
     pub fn mark_failed(&mut self, id: &str) -> Result<(), LifecycleError> {

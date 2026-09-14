@@ -128,7 +128,10 @@ mod tests {
     #[test]
     fn fallback_skips_down() {
         let g = group(GroupSelect::Fallback, &["a", "b"], None);
-        let health = [("a", MemberHealth::down()), ("b", MemberHealth::healthy(10))];
+        let health = [
+            ("a", MemberHealth::down()),
+            ("b", MemberHealth::healthy(10)),
+        ];
         assert_eq!(select_member(&g, &health).unwrap(), "b");
     }
 
