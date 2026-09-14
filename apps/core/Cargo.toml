@@ -1,8 +1,16 @@
 [package]
-name="netpilot-core"
-version="0.1.0"
-edition="2021"
+name = "netpilot-core"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+repository.workspace = true
 
 [[bin]]
-name="netpilot-core"
-path="src/main.rs"
+name = "netpilot-core"
+path = "src/main.rs"
+
+[dependencies]
+netpilot-core-lib = { path = "../../crates/core" }
+
+[lints]
+workspace = true
