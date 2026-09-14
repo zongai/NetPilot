@@ -10,3 +10,7 @@ path = "src/lib.rs"
 
 [lints]
 workspace = true
+
+[features]
+default = []
+wintun-native = []

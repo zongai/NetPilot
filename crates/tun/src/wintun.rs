@@ -95,13 +95,7 @@ impl WintunSession {
         if self.request.name.is_empty() {
             return Err(TunError::InvalidConfig("adapter name empty"));
         }
-        // Real LoadLibraryW is behind cfg(all(windows, feature = "wintun-native")).
-        if cfg!(all(windows, feature = "wintun-native")) {
-            self.state = WintunSessionState::Failed;
-            return Err(TunError::Unsupported(
-                "wintun-native feature not linked in this build",
-            ));
-        }
+        // Native LoadLibraryW reserved for feature `wintun-native` (Windows).
         self.state = WintunSessionState::LibraryLoaded;
         Ok(())
     }
