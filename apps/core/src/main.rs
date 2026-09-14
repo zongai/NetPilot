@@ -13,11 +13,11 @@ use netpilot_subscription::{
     run_subscription_pipeline, FilterRule, RenameRule, SubscriptionProfile,
 };
 use netpilot_tun::{MockTunProvider, TunConfig, TunProvider, WintunFeasibility};
-use service::ServiceControl;
-#[cfg(windows)]
-use service::run_pipe_service;
 #[cfg(not(windows))]
 use service::run_idle_service;
+#[cfg(windows)]
+use service::run_pipe_service;
+use service::ServiceControl;
 use std::time::Duration;
 
 fn feature_smoke() {
