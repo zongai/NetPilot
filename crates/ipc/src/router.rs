@@ -1,6 +1,6 @@
 //! IPC request routing (NP-018).
 
-use crate::{EnvelopeError, ErrorBody, IpcEnvelope, MessageKind, StatusCode};
+use crate::{EnvelopeError, ErrorBody, IpcEnvelope, MessageKind};
 
 /// Result of dispatching one request envelope.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -118,6 +118,7 @@ pub fn echo_handler(req: &IpcEnvelope) -> Result<IpcEnvelope, RouteError> {
 
 #[cfg(test)]
 mod tests {
+    use crate::StatusCode;
     use super::*;
 
     #[test]
