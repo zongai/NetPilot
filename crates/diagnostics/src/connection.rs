@@ -34,7 +34,7 @@ pub enum ConnectionEvent {
 struct LiveConnection {
     meta: ConnectionMeta,
     state: ConnectionState,
-    opened_at: Instant,
+    opened_at: Instant, // retained for future duration metrics
     bytes_up: u64,
     bytes_down: u64,
 }
