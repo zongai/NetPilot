@@ -8,16 +8,18 @@ use std::time::Duration;
 use netpilot_core_lib::{CoreRuntime, RuntimeState};
 use netpilot_ipc::{
     register_health_handlers, ErrorBody, HealthStatus, IpcEnvelope, MessageKind, RequestRouter,
-    RouteError, RouteOutcome, StatusCode, DEFAULT_PIPE_NAME,
+    RouteError, RouteOutcome, DEFAULT_PIPE_NAME,
 };
 use netpilot_os_pipe::{bare_name, NamedPipeListener, PipeSession, PipeTransportError};
 use netpilot_subscription::{
-    run_subscription_pipeline, FilterRule, MockFetcher, RenameRule, SubscriptionFetcher,
-    SubscriptionManager, SubscriptionProfile,
+    run_subscription_pipeline, FilterRule, RenameRule, SubscriptionFetcher, SubscriptionManager,
+    SubscriptionProfile,
 };
 
 #[cfg(feature = "real-http")]
 use netpilot_subscription::UreqFetcher;
+#[cfg(not(feature = "real-http"))]
+use netpilot_subscription::MockFetcher;
 
 /// Shared flag so IPC `runtime.shutdown` can stop the accept loop.
 pub struct ServiceControl {
@@ -416,6 +418,7 @@ pub fn run_idle_service(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use netpilot_ipc::StatusCode;
 
     #[test]
     fn router_ping() {
