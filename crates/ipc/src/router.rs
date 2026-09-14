@@ -118,8 +118,8 @@ pub fn echo_handler(req: &IpcEnvelope) -> Result<IpcEnvelope, RouteError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::StatusCode;
     use super::*;
+    use crate::StatusCode;
 
     #[test]
     fn routes_registered_operation() {
