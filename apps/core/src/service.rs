@@ -359,19 +359,20 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             .lock()
             .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
         match g.route_and_dial(host, port) {
-            Ok((route, report)) => Ok(
-                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
-                    .with_payload(serde_json::json!({
-                        "outbound": route.outbound,
-                        "explanation": route.explanation,
-                        "matcher": route.matcher,
-                        "protocol": report.protocol,
-                        "server": report.server,
-                        "peer": report.peer,
-                        "elapsed_ms": report.elapsed_ms,
-                        "via": report.via,
-                    })),
-            ),
+            Ok((route, report)) => Ok(IpcEnvelope::ok_response(
+                req.request_id.clone(),
+                req.operation.clone(),
+            )
+            .with_payload(serde_json::json!({
+                "outbound": route.outbound,
+                "explanation": route.explanation,
+                "matcher": route.matcher,
+                "protocol": report.protocol,
+                "server": report.server,
+                "peer": report.peer,
+                "elapsed_ms": report.elapsed_ms,
+                "via": report.via,
+            }))),
             Err(e) => err_resp(req, "unavailable", e.to_string(), 503),
         }
     });
@@ -711,7 +712,6 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
                 .with_payload(native),
         )
     });
-
 
     router
 }

@@ -55,9 +55,7 @@ pub fn start_socks_inbound(
     port: u16,
 ) -> Result<SocksInbound, String> {
     let listener = TcpListener::bind(("127.0.0.1", port)).map_err(|e| e.to_string())?;
-    listener
-        .set_nonblocking(true)
-        .map_err(|e| e.to_string())?;
+    listener.set_nonblocking(true).map_err(|e| e.to_string())?;
     let bound = listener.local_addr().map_err(|e| e.to_string())?.port();
     let stop = Arc::new(AtomicBool::new(false));
     let stats = Arc::new(Mutex::new(InboundStats::default()));

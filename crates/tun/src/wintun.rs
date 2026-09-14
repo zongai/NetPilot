@@ -204,10 +204,7 @@ impl WintunSession {
                     self.capacity_ring,
                 ) {
                     Ok(session) => {
-                        self.native = Some(NativeBundle {
-                            _lib: lib,
-                            session,
-                        });
+                        self.native = Some(NativeBundle { _lib: lib, session });
                         self.native_active = true;
                         self.state = WintunSessionState::SessionRunning;
                         return Ok(());

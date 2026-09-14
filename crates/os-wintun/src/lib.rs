@@ -95,10 +95,8 @@ mod win {
     ) -> *mut core::ffi::c_void;
     type FnEndSession = unsafe extern "C" fn(session: *mut core::ffi::c_void);
     type FnGetReadWaitEvent = unsafe extern "C" fn(session: *mut core::ffi::c_void) -> RawHandle;
-    type FnReceivePacket = unsafe extern "C" fn(
-        session: *mut core::ffi::c_void,
-        packet_size: *mut u32,
-    ) -> *mut u8;
+    type FnReceivePacket =
+        unsafe extern "C" fn(session: *mut core::ffi::c_void, packet_size: *mut u32) -> *mut u8;
     type FnReleaseReceivePacket =
         unsafe extern "C" fn(session: *mut core::ffi::c_void, packet: *const u8);
     type FnAllocateSendPacket =
