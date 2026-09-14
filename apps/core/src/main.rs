@@ -22,10 +22,7 @@ fn main() {
         std::process::exit(1);
     }
 
-    eprintln!(
-        "netpilot-core state={}",
-        runtime.state().as_str()
-    );
+    eprintln!("netpilot-core state={}", runtime.state().as_str());
 
     // Skeleton exit path — production will block on IPC / cancellation.
     let _ = runtime.begin_stop();

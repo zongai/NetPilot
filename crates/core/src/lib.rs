@@ -130,7 +130,11 @@ impl CoreRuntime {
 
     /// `Stopping -> Stopped`.
     pub fn mark_stopped(&mut self) -> Result<(), Error> {
-        self.transition(RuntimeState::Stopping, RuntimeState::Stopped, "mark_stopped")
+        self.transition(
+            RuntimeState::Stopping,
+            RuntimeState::Stopped,
+            "mark_stopped",
+        )
     }
 
     /// Record unrecoverable failure from non-terminal states.
