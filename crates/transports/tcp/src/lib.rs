@@ -139,10 +139,9 @@ mod tests {
         let handle = std::thread::spawn(move || {
             let _ = listener.accept();
         });
-        let res = dial_tcp(
-            &TcpDialRequest::new("127.0.0.1", port).with_timeout(Duration::from_secs(2)),
-        )
-        .unwrap();
+        let res =
+            dial_tcp(&TcpDialRequest::new("127.0.0.1", port).with_timeout(Duration::from_secs(2)))
+                .unwrap();
         assert!(res.elapsed_ms < 2000);
         let _ = handle.join();
     }

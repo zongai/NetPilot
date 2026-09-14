@@ -59,9 +59,7 @@ mod win {
     const INVALID: RawHandle = 0 as RawHandle;
 
     fn wide(path: &Path) -> Result<Vec<u16>, WintunLoadError> {
-        let s = path
-            .to_str()
-            .ok_or(WintunLoadError::InvalidPath)?;
+        let s = path.to_str().ok_or(WintunLoadError::InvalidPath)?;
         Ok(OsStr::new(s).encode_wide().chain(std::iter::once(0)).collect())
     }
 
@@ -80,9 +78,7 @@ mod win {
         pub fn has_export(&self, name: &str) -> bool {
             let mut cname = name.as_bytes().to_vec();
             cname.push(0);
-            let p = unsafe {
-                GetProcAddress(self.handle.as_raw_handle(), cname.as_ptr())
-            };
+            let p = unsafe { GetProcAddress(self.handle.as_raw_handle(), cname.as_ptr()) };
             !p.is_null()
         }
 

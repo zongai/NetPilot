@@ -120,7 +120,9 @@ impl WintunSession {
                         }
                         Err(_e) => {
                             self.state = WintunSessionState::Failed;
-                            return Err(TunError::Io("failed to load wintun.dll from absolute path"));
+                            return Err(TunError::Io(
+                                "failed to load wintun.dll from absolute path",
+                            ));
                         }
                     }
                 }

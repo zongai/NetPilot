@@ -11,13 +11,13 @@ use netpilot_ipc::{
     RouteError, RouteOutcome, DEFAULT_PIPE_NAME,
 };
 use netpilot_os_pipe::{bare_name, NamedPipeListener, PipeSession, PipeTransportError};
-use netpilot_transport_tcp::{dial_tcp, TcpDialRequest};
-use netpilot_tun::{WintunDllPath, WintunSession, WintunSessionState};
 use netpilot_routing::{parse_rules, RouteRequest, RoutingEngine, RuleIndex};
 use netpilot_subscription::{
     run_subscription_pipeline, FilterRule, RenameRule, SubscriptionFetcher, SubscriptionManager,
     SubscriptionProfile,
 };
+use netpilot_transport_tcp::{dial_tcp, TcpDialRequest};
+use netpilot_tun::{WintunDllPath, WintunSession};
 
 #[cfg(not(feature = "real-http"))]
 use netpilot_subscription::MockFetcher;
@@ -272,7 +272,6 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
         )
     });
 
-
     // --- Rules engine (shared) ---
     let engine: Arc<Mutex<Option<RoutingEngine>>> = Arc::new(Mutex::new(None));
 
@@ -378,10 +377,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     });
 
     router.register("tun.wintun_probe", move |req| {
-        let mut session = WintunSession::new(
-            Default::default(),
-            WintunDllPath::BesideExecutable,
-        );
+        let mut session = WintunSession::new(Default::default(), WintunDllPath::BesideExecutable);
         let load = session.load_library();
         let state = format!("{:?}", session.state());
         let mut native = serde_json::json!({
