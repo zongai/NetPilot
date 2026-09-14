@@ -102,11 +102,7 @@ impl CoreRuntime {
 
     /// `Created -> Starting`.
     pub fn begin_start(&mut self) -> Result<(), Error> {
-        self.transition(
-            RuntimeState::Created,
-            RuntimeState::Starting,
-            "begin_start",
-        )
+        self.transition(RuntimeState::Created, RuntimeState::Starting, "begin_start")
     }
 
     /// `Starting -> Running` (after subsystems report ready in later tasks).
