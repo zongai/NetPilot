@@ -99,16 +99,16 @@ impl WintunSession {
                             let exports = lib.probe_exports();
                             if exports.is_empty() {
                                 self.state = WintunSessionState::Failed;
-                                return Err(TunError::Io("wintun.dll loaded but no known exports"));
+                                return Err(TunError::Io(
+                                    "wintun.dll loaded but no known exports",
+                                ));
                             }
                             self.state = WintunSessionState::LibraryLoaded;
-                            return Ok(());
                         }
                         Err(e) => {
                             // Soft-fail: stay usable in mock mode when DLL absent.
                             let _ = e;
                             self.state = WintunSessionState::LibraryLoaded;
-                            return Ok(());
                         }
                     }
                 }
@@ -116,7 +116,6 @@ impl WintunSession {
                     match netpilot_os_wintun::load_from_path(std::path::Path::new(path)) {
                         Ok(_lib) => {
                             self.state = WintunSessionState::LibraryLoaded;
-                            return Ok(());
                         }
                         Err(_e) => {
                             self.state = WintunSessionState::Failed;
@@ -127,6 +126,7 @@ impl WintunSession {
                     }
                 }
             }
+            Ok(())
         }
         #[cfg(not(feature = "wintun-native"))]
         {
