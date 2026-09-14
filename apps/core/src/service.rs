@@ -7,6 +7,7 @@ use std::time::Duration;
 use netpilot_core_lib::{CoreRuntime, RuntimeState};
 use netpilot_ipc::{
     register_health_handlers, HealthStatus, IpcEnvelope, MessageKind, RequestRouter, RouteOutcome,
+    DEFAULT_PIPE_NAME,
 };
 use netpilot_os_pipe::{bare_name, NamedPipeListener, PipeSession, PipeTransportError};
 
