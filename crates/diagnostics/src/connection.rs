@@ -116,6 +116,15 @@ impl ConnectionManager {
     pub fn list(&self) -> Vec<ConnectionMeta> {
         self.live.values().map(|c| c.meta.clone()).collect()
     }
+
+    /// Returns (bytes_up, bytes_down, age_ms) for a live connection.
+    pub fn stats(&self, id: ConnectionId) -> Option<(u64, u64, u128)> {
+        self.live.get(&id).map(|c| {
+            let age = c.opened_at.elapsed().as_millis();
+            let _ = c.state;
+            (c.bytes_up, c.bytes_down, age)
+        })
+    }
 }
 
 #[cfg(test)]
