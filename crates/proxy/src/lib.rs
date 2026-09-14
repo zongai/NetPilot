@@ -1,6 +1,20 @@
-//! Unified proxy profile / group / lifecycle model (NP-025 / NP-030).
+//! Unified proxy model: profile, groups, health, lifecycle, secrets (NP-025…NP-035).
 
 #![forbid(unsafe_code)]
+
+mod endpoint;
+mod groups;
+mod health;
+mod lifecycle;
+mod secrets;
+
+pub use endpoint::{
+    validate_host, validate_port, validate_profile_endpoint, validate_uuid, EndpointError,
+};
+pub use groups::{apply_selection, select_member, GroupError, MemberHealth};
+pub use health::{HealthRecord, HealthState, HealthTable, ProbePolicy};
+pub use lifecycle::{LifecycleError, LifecycleManager};
+pub use secrets::{leaks_secret, redact_profile, redacted_field_map, REDACTED, SECRET_FIELD_NAMES};
 
 use serde::{Deserialize, Serialize};
 
