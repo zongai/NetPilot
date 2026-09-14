@@ -104,3 +104,10 @@ First formal release tag. End-to-end task track complete (**NP-001 … NP-120**)
 - VMess AEAD outbound dialer
 - REALITY uTLS-style ClientHello fingerprint profiles (chrome/firefox/safari/ios/android/edge)
 - IPC: `routes.inject`, `routes.rollback`, `netstack.stats`, `reality.fingerprint`
+
+### Added (gap fill)
+- WebSocket upgrade + binary frames for VLESS/VMess over WS
+- ShadowsocksR dial subset
+- HTTP/2 preface/settings + gRPC config surface
+- IPC: connections.list, config.load, dns.resolve, tunnel.pump_loop_start/stop
+- Desktop WPF binds proxy.list / subscription.list / connections.list / tunnel.status

@@ -3,10 +3,14 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::net::ToSocketAddrs;
 use std::time::Duration;
 
 use netpilot_core_lib::{CoreRuntime, RuntimeState};
 use netpilot_engine::{start_socks_inbound, TrafficEngine};
+use netpilot_diagnostics::ConnectionManager;
+use netpilot_config::ConfigDocument;
+use netpilot_dns::{DnsQuery, SystemResolver};
 use netpilot_ipc::{
     register_health_handlers, ErrorBody, HealthStatus, IpcEnvelope, MessageKind, RequestRouter,
     RouteError, RouteOutcome, DEFAULT_PIPE_NAME,
@@ -132,6 +136,8 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
 
     let engine: Arc<Mutex<TrafficEngine>> = Arc::new(Mutex::new(TrafficEngine::new()));
     let inbound: Arc<Mutex<Option<netpilot_engine::SocksInbound>>> = Arc::new(Mutex::new(None));
+    let conn_mgr: Arc<Mutex<ConnectionManager>> = Arc::new(Mutex::new(ConnectionManager::new()));
+    let pump_stop: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
 
     let mgr_list = mgr.clone();
     router.register("subscription.list", move |req| {
@@ -832,6 +838,137 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             ),
             Err(e) => err_resp(req, "invalid_argument", e.to_string(), 400),
         }
+    });
+
+
+    let cm_list = conn_mgr.clone();
+    router.register("connections.list", move |req| {
+        let g = cm_list
+            .lock()
+            .map_err(|_| RouteError::Internal("conn lock poisoned"))?;
+        let items: Vec<serde_json::Value> = g
+            .list()
+            .into_iter()
+            .map(|m| {
+                serde_json::json!({
+                    "id": m.id,
+                    "destination": m.destination,
+                    "network": m.network,
+                    "outbound": m.outbound,
+                    "process": m.process_name,
+                    "rule": m.rule_summary,
+                })
+            })
+            .collect();
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                .with_payload(serde_json::json!({ "items": items })),
+        )
+    });
+
+    let cfg_load = engine.clone();
+    router.register("config.load", move |req| {
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
+        let text = payload
+            .get("text")
+            .and_then(|v| v.as_str())
+            .ok_or(RouteError::InvalidInput("payload.text required"))?;
+        let format = payload
+            .get("format")
+            .and_then(|v| v.as_str())
+            .unwrap_or("json");
+        let fmt = match format {
+            "yaml" | "yml" => netpilot_config::ConfigFormat::Yaml,
+            _ => netpilot_config::ConfigFormat::Json,
+        };
+        match netpilot_config::load_from_str(text, fmt) {
+            Ok(doc) => match doc.load_pipeline() {
+                Ok(norm) => {
+                    let mut g = cfg_load
+                        .lock()
+                        .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+                    for p in norm.proxies {
+                        g.add_profile(p);
+                    }
+                    Ok(
+                        IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                            .with_payload(serde_json::json!({
+                                "profiles": g.profiles().len(),
+                                "groups": norm.groups.len(),
+                                "ok": true,
+                            })),
+                    )
+                }
+                Err(e) => err_resp(req, "invalid_argument", e.to_string(), 400),
+            },
+            Err(e) => err_resp(req, "invalid_argument", e.to_string(), 400),
+        }
+    });
+
+    router.register("dns.resolve", move |req| {
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
+        let name = payload
+            .get("name")
+            .and_then(|v| v.as_str())
+            .ok_or(RouteError::InvalidInput("name"))?;
+        // SystemResolver probe is availability; for resolve use std ToSocketAddrs
+        let addrs: Vec<String> = format!("{name}:0")
+            .to_socket_addrs()
+            .map(|i| {
+                i.filter_map(|a| match a {
+                    std::net::SocketAddr::V4(v) => Some(v.ip().to_string()),
+                    std::net::SocketAddr::V6(v) => Some(v.ip().to_string()),
+                })
+                .collect()
+            })
+            .unwrap_or_default();
+        let _ = SystemResolver::probe();
+        let _ = DnsQuery::a(name);
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
+                serde_json::json!({
+                    "name": name,
+                    "addresses": addrs,
+                }),
+            ),
+        )
+    });
+
+    let engine_bg = engine.clone();
+    let pump_stop_start = pump_stop.clone();
+    router.register("tunnel.pump_loop_start", move |req| {
+        pump_stop_start.store(false, Ordering::SeqCst);
+        let eng = engine_bg.clone();
+        let stop = pump_stop_start.clone();
+        std::thread::spawn(move || {
+            while !stop.load(Ordering::SeqCst) {
+                if let Ok(mut g) = eng.lock() {
+                    let _ = g.pump_and_relay_once(100);
+                } else {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        });
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                .with_payload(serde_json::json!({ "running": true })),
+        )
+    });
+
+    let pump_stop_stop = pump_stop.clone();
+    router.register("tunnel.pump_loop_stop", move |req| {
+        pump_stop_stop.store(true, Ordering::SeqCst);
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                .with_payload(serde_json::json!({ "running": false })),
+        )
     });
 
     router.register("outbound.tcp_probe", move |req| {

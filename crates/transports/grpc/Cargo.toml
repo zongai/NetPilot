@@ -10,6 +10,7 @@ path = "src/lib.rs"
 
 [dependencies]
 netpilot-protocol-common = { path = "../../protocols/common" }
+netpilot-transport-http2 = { path = "../http2" }
 
 [lints]
 workspace = true

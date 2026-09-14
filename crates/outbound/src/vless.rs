@@ -1,4 +1,4 @@
-//! VLESS TCP client header (version 0) over TLS when transport is TLS/REALITY.
+//! VLESS TCP client header (version 0) over TCP/TLS/WebSocket.
 
 use std::io::Write;
 
@@ -6,6 +6,7 @@ use netpilot_proxy::{ProxyProfile, TransportKind};
 
 use crate::addr::{encode_socks_addr, TargetAddr};
 use crate::tls_stream::wrap_tls;
+use crate::websocket::{connect_websocket, ws_send_binary, WsUpgrade};
 use crate::{connect_server, DialReport, DialRequest, OutboundError, OutboundStream};
 
 pub fn dial_vless(
@@ -19,16 +20,33 @@ pub fn dial_vless(
         .ok_or_else(|| OutboundError::Invalid("vless uuid required".into()))?;
     let uuid_bytes = parse_uuid(uuid)?;
 
-    let tcp = connect_server(&profile.server, profile.port, req.timeout)?;
-
+    let is_ws = matches!(profile.transport, Some(TransportKind::Websocket));
     let use_tls = matches!(
         profile.transport,
-        None | Some(TransportKind::Tls)
-            | Some(TransportKind::Reality)
-            | Some(TransportKind::Websocket)
-    );
+        None | Some(TransportKind::Tls) | Some(TransportKind::Reality)
+    ) || (is_ws && profile.sni.is_some())
+        || profile.port == 443;
 
-    let mut stream: OutboundStream = if use_tls {
+    let mut stream: OutboundStream = if is_ws {
+        let host = profile
+            .host
+            .clone()
+            .or_else(|| profile.sni.clone())
+            .unwrap_or_else(|| profile.server.clone());
+        let path = profile.path.clone().unwrap_or_else(|| "/".into());
+        connect_websocket(
+            &profile.server,
+            profile.port,
+            &WsUpgrade {
+                host,
+                path,
+                sni: profile.sni.clone(),
+                use_tls: use_tls || profile.sni.is_some(),
+                timeout: req.timeout,
+            },
+        )?
+    } else if use_tls {
+        let tcp = connect_server(&profile.server, profile.port, req.timeout)?;
         let sni = profile
             .sni
             .as_deref()
@@ -47,38 +65,46 @@ pub fn dial_vless(
         let tls = wrap_tls(tcp, sni, &alpn, false)?;
         OutboundStream::Tls(Box::new(tls))
     } else {
-        OutboundStream::Plain(tcp)
+        OutboundStream::Plain(connect_server(
+            &profile.server,
+            profile.port,
+            req.timeout,
+        )?)
     };
 
-    // VLESS request header:
-    // version(1) + uuid(16) + addon_len(1) + addon + command(1) + port(2) + addr
     let mut buf = Vec::with_capacity(64);
-    buf.push(0x00); // version
+    buf.push(0x00);
     buf.extend_from_slice(&uuid_bytes);
-    buf.push(0x00); // addon length 0
-    buf.push(0x01); // command TCP
+    buf.push(0x00);
+    buf.push(0x01);
     buf.extend_from_slice(&req.target_port.to_be_bytes());
-    // address: reuse socks atyp encoding without port (VLESS puts port before addr)
     let addr = TargetAddr::from_host_port(&req.target_host, req.target_port);
     let mut socks = encode_socks_addr(&addr)?;
-    // socks is atyp + addr + port; strip trailing port (2 bytes)
     if socks.len() < 3 {
         return Err(OutboundError::Invalid("addr encode too short".into()));
     }
     socks.truncate(socks.len() - 2);
     buf.extend_from_slice(&socks);
 
-    stream
-        .write_all(&buf)
-        .map_err(|e| OutboundError::Handshake(e.to_string()))?;
-    stream
-        .flush()
-        .map_err(|e| OutboundError::Handshake(e.to_string()))?;
+    if is_ws {
+        ws_send_binary(&mut stream, &buf)?;
+    } else {
+        stream
+            .write_all(&buf)
+            .map_err(|e| OutboundError::Handshake(e.to_string()))?;
+        stream
+            .flush()
+            .map_err(|e| OutboundError::Handshake(e.to_string()))?;
+    }
 
     Ok((
         stream,
         DialReport {
-            protocol: "vless".into(),
+            protocol: if is_ws {
+                "vless+ws".into()
+            } else {
+                "vless".into()
+            },
             server: format!("{}:{}", profile.server, profile.port),
             peer: format!("{}:{}", profile.server, profile.port),
             elapsed_ms: started.elapsed().as_millis(),

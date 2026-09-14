@@ -14,6 +14,8 @@ mod tls_stream;
 mod trojan;
 mod vless;
 mod vmess;
+mod websocket;
+mod ssr;
 
 pub use addr::{encode_socks_addr, TargetAddr};
 pub use http_connect::dial_http_connect;
@@ -23,6 +25,8 @@ pub use tls_stream::{wrap_tls, TlsStream};
 pub use trojan::dial_trojan;
 pub use vless::dial_vless;
 pub use vmess::dial_vmess;
+pub use websocket::{connect_websocket, ws_send_binary, WsUpgrade};
+pub use ssr::dial_ssr;
 
 use std::io::{Read, Write};
 use std::net::TcpStream;
@@ -210,9 +214,7 @@ pub fn dial_via_profile(
         ProtocolKind::Vless => dial_vless(profile, req),
         ProtocolKind::Shadowsocks | ProtocolKind::Shadowsocks2022 => dial_shadowsocks(profile, req),
         ProtocolKind::Vmess => dial_vmess(profile, req),
-        ProtocolKind::ShadowsocksR => Err(OutboundError::Unsupported(
-            "shadowsocksr dial not enabled".into(),
-        )),
+        ProtocolKind::ShadowsocksR => dial_ssr(profile, req),
     }
 }
 
