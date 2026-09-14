@@ -1,7 +1,15 @@
 [package]
-name="netpilot-proxy"
-version="0.1.0"
-edition="2021"
+name = "netpilot-proxy"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+repository.workspace = true
 
 [lib]
-path="src/lib.rs"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+
+[lints]
+workspace = true

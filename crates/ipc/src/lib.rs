@@ -1,13 +1,37 @@
-//! NetPilot IPC: versioned envelope (NP-015) + named pipe server skeleton (NP-016).
+//! NetPilot IPC (NP-015…NP-024).
 //!
+//! Envelope, named pipe server/client skeletons, routing, events, error map,
+//! timeout/cancel, local auth, version negotiation, health endpoint.
 //! No secrets in logged envelopes — callers must redact before diagnostics.
 
 #![forbid(unsafe_code)]
 
+mod auth;
+mod client;
+mod error_map;
+mod events;
+mod health;
+mod negotiate;
+mod router;
 mod server;
+mod timeout;
 
+pub use auth::{
+    privilege_for_operation, AuthDecision, LocalAuthPolicy, PeerIdentity, Privilege,
+};
+pub use client::{ClientState, NamedPipeClient, PipeClientConfig};
+pub use error_map::{
+    code_for_kind, ensure_error_status, error_response, map_pipe_error, map_route_error,
+};
+pub use events::{EventError, EventStream};
+pub use health::{handle_health_check, register_health_handlers, HealthStatus};
+pub use negotiate::{negotiate, negotiate_response, NegotiateError, VersionOffer};
+pub use router::{echo_handler, RequestRouter, RouteError, RouteOutcome};
 pub use server::{
     NamedPipeServer, PipeConnection, PipeError, PipeServerConfig, ServerState, DEFAULT_PIPE_NAME,
+};
+pub use timeout::{
+    check_budget, BudgetError, CancelError, CancelToken, Deadline, TimeoutError,
 };
 
 use serde::{Deserialize, Serialize};
