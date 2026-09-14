@@ -1,3 +1,4 @@
+#![allow(dead_code)] // pipe service path is Windows-only; exercised on target
 //! Resident Core service: IPC request loop over named pipe (Windows).
 
 use std::sync::atomic::{AtomicBool, Ordering};

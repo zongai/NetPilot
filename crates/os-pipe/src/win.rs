@@ -203,7 +203,7 @@ impl PipeSession for NamedPipeStream {
 
     fn write_line(&mut self, line: &str) -> Result<(), PipeTransportError> {
         let mut data = line.as_bytes().to_vec();
-        if !data.ends_with(b'\n') {
+        if !data.ends_with(b"\n") {
             data.push(b'\n');
         }
         self.with_file(|f| {
