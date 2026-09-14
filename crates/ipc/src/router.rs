@@ -110,12 +110,10 @@ impl std::error::Error for RouteError {}
 
 /// Echo handler used in tests and as a sample.
 pub fn echo_handler(req: &IpcEnvelope) -> Result<IpcEnvelope, RouteError> {
-    Ok(IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
-        .with_payload(
-            req.payload
-                .clone()
-                .unwrap_or_else(|| serde_json::json!({})),
-        ))
+    Ok(
+        IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+            .with_payload(req.payload.clone().unwrap_or_else(|| serde_json::json!({}))),
+    )
 }
 
 #[cfg(test)]

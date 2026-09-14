@@ -16,9 +16,7 @@ mod router;
 mod server;
 mod timeout;
 
-pub use auth::{
-    privilege_for_operation, AuthDecision, LocalAuthPolicy, PeerIdentity, Privilege,
-};
+pub use auth::{privilege_for_operation, AuthDecision, LocalAuthPolicy, PeerIdentity, Privilege};
 pub use client::{ClientState, NamedPipeClient, PipeClientConfig};
 pub use error_map::{
     code_for_kind, ensure_error_status, error_response, map_pipe_error, map_route_error,
