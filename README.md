@@ -20,6 +20,8 @@ Core.exe (Rust)          ← single source of truth
 Protocol and transport are independent layers.  
 REALITY is a security/transport capability, not a standalone protocol.
 
+Ownership boundaries, crate matrix, and non-goals: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
 **Target protocols:** HTTP/HTTPS, SOCKS5, Shadowsocks, Shadowsocks 2022, ShadowsocksR, VMess, VLESS, VLESS+TLS, VLESS+REALITY/Vision, Trojan  
 
 **Target transports:** TCP, UDP, TLS, WebSocket, HTTP/2, gRPC

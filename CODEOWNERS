@@ -1,6 +1,26 @@
+# Ownership map aligned with docs/ARCHITECTURE.md (NP-004).
+# Team handles are placeholders until GitHub teams exist.
+
 * @netpilot-core
+
 /apps/desktop/ @netpilot-ui
+/apps/core/ @netpilot-core
+
+/crates/core/ @netpilot-core
+/crates/ipc/ @netpilot-core
+/crates/config/ @netpilot-core
+/crates/rules/ @netpilot-core
+/crates/routing/ @netpilot-core
+/crates/proxy/ @netpilot-core
+/crates/diagnostics/ @netpilot-core
+/crates/testkit/ @netpilot-core
+
 /crates/tun/ @netpilot-network
 /crates/dns/ @netpilot-network
+/crates/process/ @netpilot-network
+
 /crates/protocols/ @netpilot-protocol
 /crates/transports/ @netpilot-protocol
+
+/docs/ @netpilot-core
+/scripts/ @netpilot-core
