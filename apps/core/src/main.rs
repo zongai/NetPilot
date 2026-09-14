@@ -20,7 +20,10 @@ fn feature_smoke() {
     eprintln!("netpilot-core {}", env!("CARGO_PKG_VERSION"));
     eprintln!("features: runtime,proxy,rules,dns,tun,process,diagnostics,subscription,tls,ipc");
     eprintln!("wintun: {:?}", WintunFeasibility::evaluate().status);
-    eprintln!("ipc pipe: \\\\.\\pipe\\{}", bare_name(netpilot_ipc::DEFAULT_PIPE_NAME));
+    eprintln!(
+        "ipc pipe: \\\\.\\pipe\\{}",
+        bare_name(netpilot_ipc::DEFAULT_PIPE_NAME)
+    );
 
     let _compat = netpilot_protocol_common::compatibility_matrix().len();
     let _tls = netpilot_transport_tls::transport_id();
