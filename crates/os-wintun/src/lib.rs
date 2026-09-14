@@ -60,7 +60,10 @@ mod win {
 
     fn wide(path: &Path) -> Result<Vec<u16>, WintunLoadError> {
         let s = path.to_str().ok_or(WintunLoadError::InvalidPath)?;
-        Ok(OsStr::new(s).encode_wide().chain(std::iter::once(0)).collect())
+        Ok(OsStr::new(s)
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect())
     }
 
     /// Loaded module handle; freed on drop.

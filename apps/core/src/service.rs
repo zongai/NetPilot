@@ -411,7 +411,6 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
         )
     });
 
-
     router
 }
 
