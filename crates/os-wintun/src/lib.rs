@@ -145,7 +145,24 @@ mod win {
 pub use win::{load_first_available, load_from_path, WintunLibrary};
 
 #[cfg(not(windows))]
-pub struct WintunLibrary;
+pub struct WintunLibrary {
+    path: PathBuf,
+}
+
+#[cfg(not(windows))]
+impl WintunLibrary {
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    pub fn has_export(&self, _name: &str) -> bool {
+        false
+    }
+
+    pub fn probe_exports(&self) -> Vec<&'static str> {
+        Vec::new()
+    }
+}
 
 #[cfg(not(windows))]
 pub fn load_from_path(_path: &Path) -> Result<WintunLibrary, WintunLoadError> {
