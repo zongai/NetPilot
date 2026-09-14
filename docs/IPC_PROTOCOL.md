@@ -1,6 +1,6 @@
 # IPC Protocol
 
-Transport: Windows Named Pipe between Desktop and Core (pipe server/client in later NP tasks).
+Transport: Windows Named Pipe between Desktop and Core.
 
 ## Envelope (versioned request/response/event)
 
@@ -17,6 +17,18 @@ Implemented in `netpilot-ipc` as `IpcEnvelope` (NP-015). Codec: JSON.
 | `payload` | Operation-specific JSON |
 | `correlation_id` | Optional tracing join key |
 
+## Named pipe server (NP-016)
+
+| Type | Role |
+|------|------|
+| `PipeServerConfig` | `pipe_name` (default `\\.\pipe\netpilot-core`), `accept_timeout`, `max_instances` |
+| `NamedPipeServer` | State: Created → Listening → Connected → ShuttingDown → Closed |
+| `PipeConnection` | Accepted session skeleton (I/O in later tasks) |
+
+API: `listen`, `accept` (timeout / cancel), `shutdown`.  
+`new_test` enables an in-process client signal for unit tests without OS pipes.  
+OS `CreateNamedPipe` bind is intentionally thin on Windows (state transition only) until a dedicated transport wiring task; non-Windows requires `test_mode`.
+
 ## Compatibility rules
 
 - Prefer **additive** changes (new fields, new operations).
@@ -28,3 +40,4 @@ Implemented in `netpilot-ipc` as `IpcEnvelope` (NP-015). Codec: JSON.
 
 - Never put passwords, tokens, or private keys in `payload` fields that are logged.
 - Error `message` must stay free of secrets (`docs/SECURITY.md`).
+- Pipe path is a local endpoint name only — not a credential.

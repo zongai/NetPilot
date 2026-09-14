@@ -1,10 +1,14 @@
-//! Versioned IPC envelope (NP-015).
+//! NetPilot IPC: versioned envelope (NP-015) + named pipe server skeleton (NP-016).
 //!
-//! Transport (named pipe) is later tasks; this module defines the stable
-//! request/response envelope and JSON codec. No secrets belong in envelopes
-//! that are logged — callers must redact before diagnostics.
+//! No secrets in logged envelopes — callers must redact before diagnostics.
 
 #![forbid(unsafe_code)]
+
+mod server;
+
+pub use server::{
+    NamedPipeServer, PipeConnection, PipeError, PipeServerConfig, ServerState, DEFAULT_PIPE_NAME,
+};
 
 use serde::{Deserialize, Serialize};
 
