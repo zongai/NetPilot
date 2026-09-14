@@ -563,8 +563,6 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             ),
         )
     });
-
-
     let engine_in = engine.clone();
     let inbound_start = inbound.clone();
     router.register("inbound.socks_start", move |req| {
