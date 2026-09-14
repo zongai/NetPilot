@@ -25,7 +25,8 @@ cargo clippy --workspace --all-targets -- -D warnings
 
 Or run `./scripts/ci.ps1`.
 
-Formatting and lint policy details: `docs/TOOLCHAIN.md`.
+Formatting and lint policy details: `docs/TOOLCHAIN.md`.  
+Security and secret redaction: `docs/SECURITY.md`.
 
 ## Windows-sensitive changes
 

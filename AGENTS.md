@@ -11,8 +11,9 @@ Before any edit:
 2. `docs/ARCHITECTURE.md`
 3. `docs/IPC_PROTOCOL.md`
 4. `docs/TOOLCHAIN.md`
-5. The **target task** only: `docs/tasks/NP-###.md`
-6. This file (`AGENTS.md`)
+5. `docs/SECURITY.md`
+6. The **target task** only: `docs/tasks/NP-###.md`
+7. This file (`AGENTS.md`)
 
 Optional when relevant: `docs/TASKS.md`, `docs/AGENT_WORKFLOW.md`.
 
@@ -39,6 +40,7 @@ Optional when relevant: `docs/TASKS.md`, `docs/AGENT_WORKFLOW.md`.
 - **Never** log or commit passwords, tokens, private keys, or full proxy credentials.
 - Redact secrets in logs, diagnostics, error messages, and test fixtures.
 - Do not embed live credentials in source, docs, or CI logs.
+- Full policy: `docs/SECURITY.md`.
 - Network / TUN / driver / privilege work requires: **timeout**, **cancellation**, **rollback**, tests, and **human review**.
 
 ## 5. Compatibility
