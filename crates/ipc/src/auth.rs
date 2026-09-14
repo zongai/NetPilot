@@ -48,17 +48,9 @@ pub enum AuthDecision {
 }
 
 /// Local-only policy: Desktop may Read/Write; Privileged needs explicit flag.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct LocalAuthPolicy {
     pub allow_privileged_from_desktop: bool,
-}
-
-impl Default for LocalAuthPolicy {
-    fn default() -> Self {
-        Self {
-            allow_privileged_from_desktop: false,
-        }
-    }
 }
 
 impl LocalAuthPolicy {
