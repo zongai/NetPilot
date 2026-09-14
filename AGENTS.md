@@ -15,7 +15,7 @@ Before any edit:
 6. The **target task** only: `docs/tasks/NP-###.md`
 7. This file (`AGENTS.md`)
 
-Optional when relevant: `docs/TASKS.md`, `docs/AGENT_WORKFLOW.md`.
+Optional when relevant: `docs/TASKS.md`, `docs/AGENT_WORKFLOW.md`, `docs/ERRORS.md`, `docs/SECURITY.md`.
 
 ## 1. One task at a time
 
