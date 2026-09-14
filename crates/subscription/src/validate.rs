@@ -27,10 +27,11 @@ pub fn validate_subscription_security(
         if n.port == 0 {
             issues.push(SecurityIssue::ZeroPort);
         }
-        if n.expects_password() && n.password.as_ref().map(|s| s.is_empty()).unwrap_or(true) {
-            if !matches!(n.protocol, netpilot_proxy::ProtocolKind::Http) {
-                issues.push(SecurityIssue::MissingCredential);
-            }
+        if n.expects_password()
+            && n.password.as_ref().map(|s| s.is_empty()).unwrap_or(true)
+            && !matches!(n.protocol, netpilot_proxy::ProtocolKind::Http)
+        {
+            issues.push(SecurityIssue::MissingCredential);
         }
         if n.requires_uuid() && n.uuid.as_ref().map(|s| s.is_empty()).unwrap_or(true) {
             issues.push(SecurityIssue::MissingCredential);

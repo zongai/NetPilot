@@ -33,16 +33,13 @@ pub fn detect_and_decode(raw: &str) -> Result<DecodedBody, DecodeError> {
         return Ok(DecodedBody::Plain(trimmed.to_string()));
     }
     if looks_like_base64(trimmed) {
-        match decode_base64_bytes(trimmed) {
-            Ok(bytes) => {
-                if let Ok(s) = String::from_utf8(bytes) {
-                    let s = s.trim().to_string();
-                    if !s.is_empty() {
-                        return Ok(DecodedBody::Base64(s));
-                    }
+        if let Ok(bytes) = decode_base64_bytes(trimmed) {
+            if let Ok(s) = String::from_utf8(bytes) {
+                let s = s.trim().to_string();
+                if !s.is_empty() {
+                    return Ok(DecodedBody::Base64(s));
                 }
             }
-            Err(_) => {}
         }
     }
     Ok(DecodedBody::Plain(trimmed.to_string()))
@@ -89,7 +86,7 @@ pub fn decode_base64_bytes(input: &str) -> Result<Vec<u8>, DecodeError> {
         })
         .collect();
     let mut buf = compact;
-    while buf.len() % 4 != 0 {
+    while !buf.len().is_multiple_of(4) {
         buf.push('=');
     }
     let table = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

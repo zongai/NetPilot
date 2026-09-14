@@ -2,23 +2,12 @@
 
 use netpilot_proxy::ProxyProfile;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct FilterRule {
     pub name_contains: Option<String>,
     pub protocol: Option<String>,
     pub region_keywords: Vec<String>,
     pub exclude_keywords: Vec<String>,
-}
-
-impl Default for FilterRule {
-    fn default() -> Self {
-        Self {
-            name_contains: None,
-            protocol: None,
-            region_keywords: vec![],
-            exclude_keywords: vec![],
-        }
-    }
 }
 
 pub fn apply_filters(profiles: Vec<ProxyProfile>, rule: &FilterRule) -> Vec<ProxyProfile> {

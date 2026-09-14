@@ -36,10 +36,8 @@ pub fn run_subscription_pipeline(
     } else if text.trim_start().starts_with('{') {
         nodes.extend(parse_singbox_json(text));
     } else {
-        for r in parse_uri_list(text) {
-            if let Ok(n) = r {
-                nodes.push(n);
-            }
+        for n in parse_uri_list(text).into_iter().flatten() {
+            nodes.push(n);
         }
     }
     let mut profiles = normalize_nodes(&nodes, &sub.id);

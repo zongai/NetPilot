@@ -175,8 +175,7 @@ fn json_field(json: &str, key: &str) -> Option<String> {
             let rest = &json[i + pat.len()..];
             if pat.ends_with(':') && !pat.ends_with("\"") {
                 let rest = rest.trim_start();
-                if rest.starts_with('"') {
-                    let rest = &rest[1..];
+                if let Some(rest) = rest.strip_prefix('"') {
                     if let Some(end) = rest.find('"') {
                         return Some(rest[..end].to_string());
                     }
