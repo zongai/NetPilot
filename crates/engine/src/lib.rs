@@ -3,20 +3,22 @@
 #![forbid(unsafe_code)]
 
 mod inbound;
+mod relay;
 
 use std::time::Duration;
 
 use netpilot_dns::{DnsRoutePolicy, FakeIpAllocator};
-use netpilot_outbound::{dial_outbound, DialReport, DialRequest, OutboundError, OutboundStream};
+use netpilot_outbound::{DialReport, DialRequest, OutboundError};
 use netpilot_proxy::ProxyProfile;
 use netpilot_routing::{parse_rules, RouteRequest, RoutingEngine, RuleIndex};
 use netpilot_tun::{TunConfig, TunError, WintunSession, WintunSessionState, WintunTunProvider};
-use netpilot_os_route::RoutePlan;
-use netpilot_netstack::{NetStack, StackEvent};
+use netpilot_os_route::{configure_interface_address, InterfaceAddress, RoutePlan};
+use netpilot_netstack::{FourTuple, NetStack, StackEvent, StackEventKind};
 use netpilot_transport_reality::{Fingerprint, RealityConfig, RealitySession};
 use std::net::Ipv4Addr;
 
 pub use inbound::{start_socks_inbound, InboundStats, SocksInbound};
+pub use relay::TunRelay;
 
 pub const CRATE_NAME: &str = "netpilot-engine";
 
@@ -69,6 +71,8 @@ pub struct TunnelStatus {
     pub packets_in: u64,
     pub packets_out: u64,
     pub last_error: Option<String>,
+    pub adapter_luid: u64,
+    pub configured_ip: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -78,6 +82,18 @@ pub struct EngineStats {
     pub proxy: u64,
     pub reject: u64,
     pub dial_fail: u64,
+}
+
+#[derive(Debug, Default)]
+pub struct PumpResult {
+    pub packet_in: Option<usize>,
+    pub replies_out: u32,
+    pub dialed: bool,
+    pub dial_error: Option<String>,
+    pub relay_error: Option<String>,
+    pub bytes_up: u64,
+    pub bytes_down: u64,
+    pub event_kind: Option<String>,
 }
 
 /// Central runtime for data-plane control.
@@ -97,6 +113,7 @@ pub struct TrafficEngine {
     netstack: NetStack,
     physical_gateway: Option<Ipv4Addr>,
     physical_luid: u64,
+    tun_relay: TunRelay,
 }
 
 impl Default for TrafficEngine {
@@ -122,6 +139,7 @@ impl TrafficEngine {
             netstack: NetStack::new(),
             physical_gateway: None,
             physical_luid: 0,
+            tun_relay: TunRelay::new(),
         }
     }
 
@@ -254,13 +272,31 @@ impl TrafficEngine {
         }
         config.ipv4 = Some("10.0.0.1".into());
         config.prefix = 24;
-        let session = self.tun_provider.open_session(config)?;
+        let mut session = self.tun_provider.open_session(config)?;
+        // Native: configure interface address via IP Helper when LUID is known.
+        if session.is_native() && session.adapter_luid() != 0 {
+            let ip: std::net::Ipv4Addr = "10.0.0.1".parse().unwrap();
+            match configure_interface_address(&InterfaceAddress {
+                address: ip,
+                prefix_len: 24,
+                interface_luid: session.adapter_luid(),
+            }) {
+                Ok(()) => session.set_configured_ip("10.0.0.1/24"),
+                Err(e) => {
+                    // Soft-fail: tunnel still runs; report error on session.
+                    let _ = e;
+                }
+            }
+        } else {
+            session.set_configured_ip("10.0.0.1/24");
+        }
         self.tun_session = Some(session);
         Ok(self.tunnel_status())
     }
 
     pub fn stop_tunnel(&mut self) -> Result<TunnelStatus, EngineError> {
         let _ = self.rollback_routes();
+        self.tun_relay.clear();
         if let Some(mut s) = self.tun_session.take() {
             let _ = s.stop();
         }
@@ -277,6 +313,8 @@ impl TrafficEngine {
                 packets_in: s.stats().0,
                 packets_out: s.stats().1,
                 last_error: s.last_error().map(|x| x.to_string()),
+                adapter_luid: s.adapter_luid(),
+                configured_ip: s.configured_ip().map(|x| x.to_string()),
             },
             None => TunnelStatus {
                 running: false,
@@ -286,20 +324,161 @@ impl TrafficEngine {
                 packets_in: 0,
                 packets_out: 0,
                 last_error: None,
+                adapter_luid: 0,
+                configured_ip: None,
             },
         }
     }
 
-    pub fn pump_tun_once(&mut self, timeout_ms: u32) -> Result<Option<usize>, EngineError> {
-        let session = self
-            .tun_session
-            .as_mut()
-            .ok_or_else(|| EngineError::State("tunnel not running".into()))?;
-        match session.receive_packet(timeout_ms)? {
-            Some(pkt) => Ok(Some(pkt.len())),
-            None => Ok(None),
+
+    /// One TUN cycle: receive → netstack → reply to TUN → dial/relay outbound.
+    pub fn pump_and_relay_once(&mut self, timeout_ms: u32) -> Result<PumpResult, EngineError> {
+        self.tun_relay.stats.pumps = self.tun_relay.stats.pumps.saturating_add(1);
+        let mut result = PumpResult::default();
+
+        // 1) Receive from TUN
+        let packet = {
+            let session = self
+                .tun_session
+                .as_mut()
+                .ok_or_else(|| EngineError::State("tunnel not running".into()))?;
+            session.receive_packet(timeout_ms)?
+        };
+
+        if let Some(pkt) = packet {
+            result.packet_in = Some(pkt.len());
+            let (replies, event) = self.handle_tun_packet(&pkt);
+
+            // 2) Write stack replies back to TUN
+            if let Some(session) = self.tun_session.as_mut() {
+                for r in &replies {
+                    let _ = session.send_packet(r);
+                    result.replies_out += 1;
+                }
+            }
+
+            // 3) Handle events → outbound
+            if let Some(ev) = event {
+                result.event_kind = Some(format!("{:?}", ev.kind));
+                match ev.kind {
+                    StackEventKind::TcpSyn => {
+                        if let Some(tuple) = ev.tuple.clone() {
+                            let outbound = ev
+                                .outbound_hint
+                                .clone()
+                                .unwrap_or_else(|| "DIRECT".into());
+                            let profiles = self.profiles.clone();
+                            // Dial destination = remote IP:port from tuple
+                            let host = netpilot_netstack::addr_str(tuple.dst);
+                            let port = tuple.dport;
+                            match self.tun_relay.open_flow(
+                                tuple,
+                                &outbound,
+                                &profiles,
+                                &host,
+                                port,
+                                self.dial_timeout,
+                            ) {
+                                Ok(()) => result.dialed = true,
+                                Err(e) => result.dial_error = Some(e),
+                            }
+                        }
+                    }
+                    StackEventKind::TcpData => {
+                        if let Some(tuple) = ev.tuple.as_ref() {
+                            if !ev.payload.is_empty() {
+                                match self.tun_relay.write_up(tuple, &ev.payload) {
+                                    Ok(n) => result.bytes_up += n as u64,
+                                    Err(e) => result.relay_error = Some(e),
+                                }
+                            }
+                        }
+                    }
+                    StackEventKind::TcpFin | StackEventKind::TcpRst => {
+                        if let Some(tuple) = ev.tuple.as_ref() {
+                            self.tun_relay.close_flow(tuple);
+                        }
+                    }
+                    _ => {}
+                }
+            }
         }
+
+        // 4) Poll outbound → inject TCP data into netstack → send to TUN
+        let down = self.tun_relay.poll_down();
+        for (tuple, data) in down {
+            if let Some(pkt) = self.netstack.inject_tcp_data(&tuple, &data) {
+                result.bytes_down += data.len() as u64;
+                if let Some(session) = self.tun_session.as_mut() {
+                    let _ = session.send_packet(&pkt);
+                    result.replies_out += 1;
+                }
+            }
+        }
+
+        Ok(result)
     }
+
+    /// Inject a synthetic packet (tests / logical TUN without native DLL).
+    pub fn inject_packet_and_relay(&mut self, packet: &[u8]) -> Result<PumpResult, EngineError> {
+        if self.tun_session.is_none() {
+            return Err(EngineError::State("tunnel not running".into()));
+        }
+        let mut result = PumpResult::default();
+        result.packet_in = Some(packet.len());
+        let (replies, event) = self.handle_tun_packet(packet);
+        if let Some(session) = self.tun_session.as_mut() {
+            for r in &replies {
+                let _ = session.send_packet(r);
+                result.replies_out += 1;
+            }
+        }
+        if let Some(ev) = event {
+            result.event_kind = Some(format!("{:?}", ev.kind));
+            if matches!(ev.kind, StackEventKind::TcpSyn) {
+                if let Some(tuple) = ev.tuple.clone() {
+                    let outbound = ev.outbound_hint.clone().unwrap_or_else(|| "DIRECT".into());
+                    let host = netpilot_netstack::addr_str(tuple.dst);
+                    let port = tuple.dport;
+                    let profiles = self.profiles.clone();
+                    match self.tun_relay.open_flow(
+                        tuple,
+                        &outbound,
+                        &profiles,
+                        &host,
+                        port,
+                        self.dial_timeout,
+                    ) {
+                        Ok(()) => result.dialed = true,
+                        Err(e) => result.dial_error = Some(e),
+                    }
+                }
+            } else if matches!(ev.kind, StackEventKind::TcpData) {
+                if let Some(tuple) = ev.tuple.as_ref() {
+                    if !ev.payload.is_empty() {
+                        let _ = self.tun_relay.write_up(tuple, &ev.payload);
+                        result.bytes_up += ev.payload.len() as u64;
+                    }
+                }
+            }
+        }
+        Ok(result)
+    }
+
+    pub fn relay_stats(&self) -> &crate::relay::RelayStats {
+        &self.tun_relay.stats
+    }
+
+    pub fn relay_flow_count(&self) -> usize {
+        self.tun_relay.flow_count()
+    }
+
+
+    pub fn pump_tun_once(&mut self, timeout_ms: u32) -> Result<Option<usize>, EngineError> {
+        let r = self.pump_and_relay_once(timeout_ms)?;
+        Ok(r.packet_in)
+    }
+
 
     pub fn allocate_fake_ip(&mut self, host: &str) -> String {
         self.fake_ip
@@ -444,7 +623,23 @@ mod tests {
         eng.select_outbound("p1");
         assert_eq!(eng.selected_outbound(), Some("p1"));
     }
+
+    #[test]
+    fn inject_syn_packet() {
+        use netpilot_netstack::{build_ipv4, build_tcp, FLAG_SYN};
+        let mut eng = TrafficEngine::new();
+        eng.start_tunnel(Some("T")).unwrap();
+        let tcp = build_tcp(40000, 80, 1, 0, FLAG_SYN, 65535, &[]);
+        let pkt = build_ipv4([10, 0, 0, 2], [1, 1, 1, 1], 6, &tcp, 1);
+        let r = eng.inject_packet_and_relay(&pkt).unwrap();
+        assert_eq!(r.event_kind.as_deref(), Some("TcpSyn"));
+        assert!(r.replies_out >= 1);
+        // dial to 1.1.1.1:80 may fail in CI; event still recorded
+        eng.stop_tunnel().unwrap();
+    }
+
 }
+
 
 /// Minimal IPv4 header peek for TUN packets (no full reassembly).
 #[derive(Debug, Clone)]

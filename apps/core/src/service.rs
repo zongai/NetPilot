@@ -512,6 +512,8 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
                         "adapter": st.adapter,
                         "state": st.state,
                         "last_error": st.last_error,
+                        "adapter_luid": st.adapter_luid,
+                        "configured_ip": st.configured_ip,
                     })),
             ),
             Err(e) => err_resp(req, "failed_precondition", e.to_string(), 500),
@@ -552,6 +554,8 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
                     "packets_in": st.packets_in,
                     "packets_out": st.packets_out,
                     "last_error": st.last_error,
+                    "adapter_luid": st.adapter_luid,
+                    "configured_ip": st.configured_ip,
                     "stats": {
                         "routed": stats.routed,
                         "direct": stats.direct,
@@ -645,6 +649,87 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
 
 
     let engine_routes = engine.clone();
+
+    let engine_pump = engine.clone();
+    router.register("tunnel.pump", move |req| {
+        let timeout_ms = req
+            .payload
+            .as_ref()
+            .and_then(|p| p.get("timeout_ms"))
+            .and_then(|v| v.as_u64())
+            .unwrap_or(50) as u32;
+        let mut g = engine_pump
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        match g.pump_and_relay_once(timeout_ms) {
+            Ok(r) => {
+                let rs = g.relay_stats();
+                Ok(
+                    IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                        .with_payload(serde_json::json!({
+                            "packet_in": r.packet_in,
+                            "replies_out": r.replies_out,
+                            "dialed": r.dialed,
+                            "dial_error": r.dial_error,
+                            "relay_error": r.relay_error,
+                            "bytes_up": r.bytes_up,
+                            "bytes_down": r.bytes_down,
+                            "event_kind": r.event_kind,
+                            "relay_flows": g.relay_flow_count(),
+                            "relay_stats": {
+                                "flows": rs.flows,
+                                "dial_ok": rs.dial_ok,
+                                "dial_fail": rs.dial_fail,
+                                "bytes_up": rs.bytes_up,
+                                "bytes_down": rs.bytes_down,
+                                "pumps": rs.pumps,
+                            }
+                        })),
+                )
+            }
+            Err(e) => err_resp(req, "failed_precondition", e.to_string(), 500),
+        }
+    });
+
+    let engine_inj = engine.clone();
+    router.register("tunnel.inject", move |req| {
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
+        // Accept hex-encoded packet for tests
+        let hex = payload
+            .get("hex")
+            .and_then(|v| v.as_str())
+            .ok_or(RouteError::InvalidInput("payload.hex required"))?;
+        let mut bytes = Vec::with_capacity(hex.len() / 2);
+        let h = hex.trim();
+        let mut i = 0;
+        while i + 1 < h.len() {
+            let b = u8::from_str_radix(&h[i..i+2], 16)
+                .map_err(|_| RouteError::InvalidInput("bad hex"))?;
+            bytes.push(b);
+            i += 2;
+        }
+        let mut g = engine_inj
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        match g.inject_packet_and_relay(&bytes) {
+            Ok(r) => Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({
+                        "packet_in": r.packet_in,
+                        "replies_out": r.replies_out,
+                        "dialed": r.dialed,
+                        "dial_error": r.dial_error,
+                        "event_kind": r.event_kind,
+                        "bytes_up": r.bytes_up,
+                    })),
+            ),
+            Err(e) => err_resp(req, "failed_precondition", e.to_string(), 500),
+        }
+    });
+
     router.register("routes.inject", move |req| {
         let payload = req.payload.as_ref();
         let tun_gw = payload

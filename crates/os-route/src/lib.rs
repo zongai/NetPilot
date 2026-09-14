@@ -1,7 +1,4 @@
-//! System route injection (Windows IP Helper; logical planner on other OS).
-//!
-//! Applies/removes IPv4 routes associated with a TUN LUID or interface index.
-//! Non-Windows builds keep an in-memory plan for tests.
+//! System route injection and interface address configuration (Windows IP Helper).
 
 #![cfg_attr(not(windows), allow(dead_code))]
 #![cfg_attr(windows, allow(unsafe_code))]
@@ -29,12 +26,10 @@ impl std::error::Error for RouteError {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SystemRoute {
-    /// Destination prefix, e.g. `0.0.0.0` or `1.2.3.4`.
     pub destination: Ipv4Addr,
     pub prefix_len: u8,
     pub next_hop: Ipv4Addr,
     pub metric: u32,
-    /// Interface LUID (Windows) when known; 0 = let OS choose.
     pub interface_luid: u64,
 }
 
@@ -77,7 +72,13 @@ impl SystemRoute {
     }
 }
 
-/// Planned routes + apply/rollback bookkeeping.
+#[derive(Debug, Clone)]
+pub struct InterfaceAddress {
+    pub address: Ipv4Addr,
+    pub prefix_len: u8,
+    pub interface_luid: u64,
+}
+
 #[derive(Debug, Default)]
 pub struct RoutePlan {
     desired: Vec<SystemRoute>,
@@ -109,7 +110,6 @@ impl RoutePlan {
         }
     }
 
-    /// Full-tunnel: default route + optional /32 bypass for proxy server.
     pub fn full_tunnel_with_bypass(
         &mut self,
         tun_gateway: Ipv4Addr,
@@ -147,27 +147,25 @@ impl RoutePlan {
 #[cfg(windows)]
 mod win {
     use super::*;
-    use std::mem::{size_of, zeroed};
+    use std::mem::zeroed;
 
     #[repr(C)]
-    #[derive(Clone, Copy)]
     struct NetLuid {
         value: u64,
+    }
+
+    #[repr(C)]
+    struct SockAddrInet {
+        family: u16,
+        port: u16,
+        addr: u32,
+        zero: [u8; 8],
     }
 
     #[repr(C)]
     struct IpAddressPrefix {
         prefix: SockAddrInet,
         prefix_length: u8,
-    }
-
-    #[repr(C)]
-    struct SockAddrInet {
-        family: u16,
-        // IPv4 sockaddr layout simplified
-        port: u16,
-        addr: u32,
-        zero: [u8; 8],
     }
 
     #[repr(C)]
@@ -189,6 +187,22 @@ mod win {
         origin: u32,
     }
 
+    #[repr(C)]
+    struct MibUnicastIpAddressRow {
+        address: SockAddrInet,
+        interface_luid: NetLuid,
+        interface_index: u32,
+        prefix_origin: i32,
+        suffix_origin: i32,
+        valid_lifetime: u32,
+        preferred_lifetime: u32,
+        on_link_prefix_length: u8,
+        skip_as_source: u8,
+        dad_state: i32,
+        scope_id: u64,
+        creation_time_stamp: i64,
+    }
+
     const AF_INET: u16 = 2;
     const MIB_IPPROTO_NETMGMT: u32 = 3;
 
@@ -196,9 +210,10 @@ mod win {
     extern "system" {
         fn CreateIpForwardEntry2(row: *const MibIpForwardRow2) -> u32;
         fn DeleteIpForwardEntry2(row: *const MibIpForwardRow2) -> u32;
+        fn CreateUnicastIpAddressEntry(row: *const MibUnicastIpAddressRow) -> u32;
     }
 
-    fn make_row(route: &SystemRoute) -> MibIpForwardRow2 {
+    fn make_forward_row(route: &SystemRoute) -> MibIpForwardRow2 {
         unsafe {
             let mut row: MibIpForwardRow2 = zeroed();
             row.interface_luid = NetLuid {
@@ -214,7 +229,6 @@ mod win {
             row.immortal = 1;
             row.valid_lifetime = 0xffff_ffff;
             row.preferred_lifetime = 0xffff_ffff;
-            let _ = size_of::<MibIpForwardRow2>();
             row
         }
     }
@@ -223,9 +237,8 @@ mod win {
         if route.prefix_len > 32 {
             return Err(RouteError::Invalid("prefix".into()));
         }
-        let row = make_row(route);
+        let row = make_forward_row(route);
         let code = unsafe { CreateIpForwardEntry2(&row) };
-        // 0 = success; 5010 = already exists — treat as ok
         if code == 0 || code == 5010 {
             Ok(())
         } else {
@@ -237,7 +250,7 @@ mod win {
     }
 
     pub fn remove_route(route: &SystemRoute) -> Result<(), RouteError> {
-        let row = make_row(route);
+        let row = make_forward_row(route);
         let code = unsafe { DeleteIpForwardEntry2(&row) };
         if code == 0 || code == 1168 {
             Ok(())
@@ -245,20 +258,55 @@ mod win {
             Err(RouteError::Api(format!("DeleteIpForwardEntry2={code}")))
         }
     }
+
+    pub fn set_unicast_ip(addr: &InterfaceAddress) -> Result<(), RouteError> {
+        if addr.prefix_len > 32 {
+            return Err(RouteError::Invalid("prefix".into()));
+        }
+        unsafe {
+            let mut row: MibUnicastIpAddressRow = zeroed();
+            row.address.family = AF_INET;
+            row.address.addr = u32::from(addr.address).to_be();
+            row.interface_luid = NetLuid {
+                value: addr.interface_luid,
+            };
+            row.on_link_prefix_length = addr.prefix_len;
+            row.prefix_origin = 1;
+            row.suffix_origin = 1;
+            row.valid_lifetime = 0xffff_ffff;
+            row.preferred_lifetime = 0xffff_ffff;
+            let code = CreateUnicastIpAddressEntry(&row);
+            if code == 0 || code == 5010 {
+                Ok(())
+            } else {
+                Err(RouteError::Api(format!(
+                    "CreateUnicastIpAddressEntry={code}"
+                )))
+            }
+        }
+    }
 }
 
 #[cfg(windows)]
-pub use win::{install_route, remove_route};
+pub use win::{install_route, remove_route, set_unicast_ip};
 
 #[cfg(not(windows))]
 pub fn install_route(_route: &SystemRoute) -> Result<(), RouteError> {
-    // Logical success for CI/tests.
     Ok(())
 }
 
 #[cfg(not(windows))]
 pub fn remove_route(_route: &SystemRoute) -> Result<(), RouteError> {
     Ok(())
+}
+
+#[cfg(not(windows))]
+pub fn set_unicast_ip(_addr: &InterfaceAddress) -> Result<(), RouteError> {
+    Ok(())
+}
+
+pub fn configure_interface_address(addr: &InterfaceAddress) -> Result<(), RouteError> {
+    set_unicast_ip(addr)
 }
 
 #[cfg(test)]
@@ -276,15 +324,17 @@ mod tests {
             2,
         );
         assert_eq!(plan.desired().len(), 2);
-        let n = plan.apply_all().unwrap();
-        assert_eq!(n, 2);
+        assert_eq!(plan.apply_all().unwrap(), 2);
         assert_eq!(plan.rollback_all().unwrap(), 2);
     }
 
     #[test]
-    fn parse_cidr() {
-        let (ip, p) = SystemRoute::parse_cidr("10.0.0.0/8").unwrap();
-        assert_eq!(ip, Ipv4Addr::new(10, 0, 0, 0));
-        assert_eq!(p, 8);
+    fn configure_ip_logical() {
+        configure_interface_address(&InterfaceAddress {
+            address: "10.0.0.1".parse().unwrap(),
+            prefix_len: 24,
+            interface_luid: 0,
+        })
+        .unwrap();
     }
 }

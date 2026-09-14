@@ -17,6 +17,9 @@ pub struct StackEvent {
     pub sport: u16,
     pub dport: u16,
     pub outbound_hint: Option<String>,
+    pub tuple: Option<FourTuple>,
+    /// Application payload (TCP data) when present.
+    pub payload: Vec<u8>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,8 +51,11 @@ impl NetStack {
         self.conns.len()
     }
 
-    /// Process one IPv4 packet from TUN. Returns optional reply packets to inject back to TUN
-    /// and a high-level event for the engine (dial / relay).
+    pub fn conns_mut(&mut self) -> &mut ConnTable {
+        &mut self.conns
+    }
+
+    /// Process one IPv4 packet from TUN. Returns reply packets + event for the engine.
     pub fn handle_inbound(
         &mut self,
         packet: &[u8],
@@ -87,7 +93,6 @@ impl NetStack {
 
         if hdr.flags & FLAG_SYN != 0 && hdr.flags & FLAG_ACK == 0 {
             self.syns = self.syns.saturating_add(1);
-            // SYN-ACK reply
             let isn = 0x1000_0000u32.wrapping_add(self.next_id as u32);
             self.next_id = self.next_id.wrapping_add(1);
             let mut tcp = build_tcp(
@@ -124,6 +129,8 @@ impl NetStack {
                     sport: hdr.src_port,
                     dport: hdr.dst_port,
                     outbound_hint: Some(outbound_name.to_string()),
+                    tuple: Some(key),
+                    payload: Vec::new(),
                 }),
             );
         }
@@ -135,7 +142,6 @@ impl NetStack {
             if !data.is_empty() && conn.state == TcpState::Established {
                 conn.bytes_up = conn.bytes_up.saturating_add(data.len() as u64);
                 conn.client_seq = hdr.seq.wrapping_add(data.len() as u32);
-                // ACK the data
                 let mut tcp = build_tcp(
                     hdr.dst_port,
                     hdr.src_port,
@@ -149,6 +155,7 @@ impl NetStack {
                 let reply = build_ipv4(dst, src, 6, &tcp, self.next_id);
                 self.next_id = self.next_id.wrapping_add(1);
                 self.packets_out = self.packets_out.saturating_add(1);
+                let name = conn.outbound_name.clone();
                 return (
                     vec![reply],
                     Some(StackEvent {
@@ -157,7 +164,9 @@ impl NetStack {
                         dst: addr_str(dst),
                         sport: hdr.src_port,
                         dport: hdr.dst_port,
-                        outbound_hint: Some(conn.outbound_name.clone()),
+                        outbound_hint: Some(name),
+                        tuple: Some(key),
+                        payload: data.to_vec(),
                     }),
                 );
             }
@@ -172,6 +181,8 @@ impl NetStack {
                         sport: hdr.src_port,
                         dport: hdr.dst_port,
                         outbound_hint: Some(conn.outbound_name.clone()),
+                        tuple: Some(key),
+                        payload: Vec::new(),
                     }),
                 );
             }
@@ -186,6 +197,8 @@ impl NetStack {
                         sport: hdr.src_port,
                         dport: hdr.dst_port,
                         outbound_hint: None,
+                        tuple: Some(key),
+                        payload: Vec::new(),
                     }),
                 );
             }
@@ -211,16 +224,13 @@ impl NetStack {
                 sport: hdr.src_port,
                 dport: hdr.dst_port,
                 outbound_hint: None,
+                tuple: None,
+                payload: Vec::new(),
             }),
         )
     }
 
-    /// Inject application data toward client as TCP PSH+ACK segments.
-    pub fn inject_tcp_data(
-        &mut self,
-        key: &FourTuple,
-        data: &[u8],
-    ) -> Option<Vec<u8>> {
+    pub fn inject_tcp_data(&mut self, key: &FourTuple, data: &[u8]) -> Option<Vec<u8>> {
         let conn = self.conns.get_mut(key)?;
         if conn.state != TcpState::Established {
             return None;
@@ -230,7 +240,7 @@ impl NetStack {
             key.sport,
             conn.server_seq,
             conn.client_seq,
-            FLAG_ACK | 0x08, // PSH
+            FLAG_ACK | 0x08,
             65535,
             data,
         );
@@ -247,8 +257,8 @@ impl NetStack {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tcp::build_tcp;
     use crate::ipv4::build_ipv4;
+    use crate::tcp::build_tcp;
 
     #[test]
     fn syn_generates_synack() {
@@ -257,7 +267,9 @@ mod tests {
         let pkt = build_ipv4([10, 0, 0, 2], [1, 2, 3, 4], 6, &tcp, 1);
         let (replies, ev) = stack.handle_inbound(&pkt, "PROXY");
         assert_eq!(replies.len(), 1);
-        assert!(matches!(ev.unwrap().kind, StackEventKind::TcpSyn));
+        let e = ev.unwrap();
+        assert!(matches!(e.kind, StackEventKind::TcpSyn));
+        assert!(e.tuple.is_some());
         assert_eq!(stack.conn_count(), 1);
     }
 }

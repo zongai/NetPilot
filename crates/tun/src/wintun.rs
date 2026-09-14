@@ -49,6 +49,8 @@ pub struct WintunSession {
     packets_in: u64,
     packets_out: u64,
     last_error: Option<String>,
+    adapter_luid: u64,
+    configured_ip: Option<String>,
     #[cfg(all(windows, feature = "wintun-native"))]
     native: Option<NativeBundle>,
 }
@@ -89,6 +91,8 @@ impl WintunSession {
             packets_in: 0,
             packets_out: 0,
             last_error: None,
+            adapter_luid: 0,
+            configured_ip: None,
             #[cfg(all(windows, feature = "wintun-native"))]
             native: None,
         }
@@ -127,6 +131,19 @@ impl WintunSession {
 
     pub fn last_error(&self) -> Option<&str> {
         self.last_error.as_deref()
+    }
+
+    pub fn adapter_luid(&self) -> u64 {
+        self.adapter_luid
+    }
+
+    pub fn configured_ip(&self) -> Option<&str> {
+        self.configured_ip.as_deref()
+    }
+
+    /// Record that an IP was applied (actual OS call is via os-route).
+    pub fn set_configured_ip(&mut self, ip: impl Into<String>) {
+        self.configured_ip = Some(ip.into());
     }
 
     /// Attempt to load the library. Soft-fails to logical mode when DLL absent.
@@ -210,6 +227,7 @@ impl WintunSession {
                     self.capacity_ring,
                 ) {
                     Ok(session) => {
+                        self.adapter_luid = session.luid();
                         self.native = Some(NativeBundle { _lib: lib, session });
                         self.native_active = true;
                         self.state = WintunSessionState::SessionRunning;
