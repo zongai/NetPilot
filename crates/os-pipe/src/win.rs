@@ -1,3 +1,4 @@
+#![allow(unsafe_code)]
 //! Win32 named-pipe implementation (byte mode, newline-framed sessions).
 
 use std::ffi::OsStr;

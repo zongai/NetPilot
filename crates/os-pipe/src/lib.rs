@@ -1,3 +1,4 @@
+#![allow(unsafe_code)] // Win32 named-pipe FFI only.
 //! Windows named-pipe transport (length-prefixed / newline JSON friendly).
 //!
 //! This crate is the only place that performs Win32 pipe FFI. Higher layers
