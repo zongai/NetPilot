@@ -50,15 +50,12 @@ impl DnsTransport for UdpDnsTransport {
     }
 
     fn query(&mut self, q: &DnsQuery) -> Result<DnsResponse, DnsError> {
+        let _ = q;
         // Real UDP dial deferred; surface clear error when not mocked.
         Err(DnsError::Transport(format!(
             "udp transport not connected (server={})",
             self.server
         )))
-        .map_err(|e| {
-            let _ = q;
-            e
-        })
     }
 }
 
