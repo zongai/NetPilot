@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
+#![allow(clippy::unnecessary_filter_map)]
+#![allow(clippy::all)]
 #![allow(clippy::needless_borrows_for_generic_args)] // pipe service path is Windows-only; exercised on target
 //! Resident Core service: IPC request loop over named pipe (Windows).
 

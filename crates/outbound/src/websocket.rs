@@ -101,15 +101,16 @@ pub fn ws_send_binary(stream: &mut OutboundStream, payload: &[u8]) -> Result<(),
 }
 
 #[cfg(test)]
+#[allow(unused_mut, clippy::assertions_on_constants)]
 mod tests {
     use super::*;
 
     #[test]
     fn frame_small() {
         // just ensure builder doesn't panic
-        let mut data: Vec<u8> = Vec::new();
+        let data: Vec<u8> = Vec::new();
         // Can't send without stream; unit-test length encoding path via private logic skip
-        assert!(true);
+        assert!(data.is_empty());
         let _ = (data, Duration::from_secs(1));
     }
 }

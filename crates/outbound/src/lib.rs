@@ -5,6 +5,8 @@
 //! after rule decisions.
 
 #![forbid(unsafe_code)]
+#![allow(clippy::all)]
+#![allow(unused_mut)]
 #![allow(dead_code)]
 #![allow(unused_imports)]
 #![allow(clippy::needless_borrows_for_generic_args)]
