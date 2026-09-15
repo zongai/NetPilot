@@ -107,7 +107,7 @@ mod tests {
     #[test]
     fn frame_small() {
         // just ensure builder doesn't panic
-        let mut data = Vec::new();
+        let mut data: Vec<u8> = Vec::new();
         // Can't send without stream; unit-test length encoding path via private logic skip
         assert!(true);
         let _ = (data, Duration::from_secs(1));
