@@ -6,12 +6,14 @@ mod apply;
 mod load;
 mod migrate;
 mod normalize;
+mod paths;
 mod validate;
 
 pub use apply::{ConfigGeneration, ConfigTransaction, RuntimeConfig};
 pub use load::{detect_format, load_from_path, load_from_str, ConfigFormat};
 pub use migrate::{migrate_document, CURRENT_SCHEMA_VERSION};
 pub use normalize::normalize_document;
+pub use paths::RuntimePaths;
 pub use validate::validate_semantic;
 
 pub use netpilot_proxy::{

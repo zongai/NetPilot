@@ -30,7 +30,18 @@ public partial class MainWindow : Window
         try
         {
             StatusText.Text = "Connecting to Core…";
-            await _ipc.ConnectAsync(3000);
+            try
+            {
+                await _ipc.ConnectAsync(2500);
+            }
+            catch
+            {
+                // NP-146: Desktop Core launcher — start sibling netpilot-core.exe once.
+                TryLaunchCore();
+                await Task.Delay(900);
+                await _ipc.ConnectAsync(5000);
+            }
+
             var resp = await _ipc.RequestAsync("health.check");
             _coreState = resp.TryGetProperty("payload", out var payload)
                 && payload.TryGetProperty("runtime_state", out var st)
@@ -45,6 +56,39 @@ public partial class MainWindow : Window
             _coreState = "disconnected";
             StatusText.Text = "Core offline (start netpilot-core.exe)";
             System.Diagnostics.Debug.WriteLine(ex);
+        }
+    }
+
+    /// <summary>NP-146: launch netpilot-core.exe next to this GUI when offline.</summary>
+    private static void TryLaunchCore()
+    {
+        try
+        {
+            var baseDir = AppContext.BaseDirectory;
+            var candidates = new[]
+            {
+                System.IO.Path.Combine(baseDir, "netpilot-core.exe"),
+                System.IO.Path.Combine(baseDir, "..", "netpilot-core.exe"),
+                System.IO.Path.Combine(baseDir, "..", "..", "netpilot-core.exe"),
+            };
+            foreach (var path in candidates)
+            {
+                var full = System.IO.Path.GetFullPath(path);
+                if (!System.IO.File.Exists(full)) continue;
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = full,
+                    WorkingDirectory = System.IO.Path.GetDirectoryName(full) ?? baseDir,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                System.Diagnostics.Process.Start(psi);
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("TryLaunchCore: " + ex.Message);
         }
     }
 

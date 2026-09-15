@@ -1,9 +1,19 @@
-//! Core runtime orchestration (NP-013 state machine + NP-014 lifecycle).
+//! Core runtime orchestration (NP-013 state machine + NP-014 lifecycle + V5 F0).
 //!
 //! Owns high-level lifecycle. IPC, TUN, and adapters plug in later;
 //! this crate stays free of Windows-only APIs.
 
 #![forbid(unsafe_code)]
+
+mod health;
+mod instance;
+mod logging;
+mod shutdown;
+
+pub use health::{CoreHealth, HealthLevel};
+pub use instance::InstanceLock;
+pub use logging::{log_line, max_level, redact_secrets, set_max_level, LogLevel};
+pub use shutdown::{ShutdownCoordinator, ShutdownReason};
 
 use std::time::Duration;
 
