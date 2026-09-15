@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/)-inspired, versions align
 
 ---
 
+## [1.0.0-rc.6] — 2026-09-15
+
+### Fixed
+- Desktop hung on Connecting to Core (raw pipe I/O + 12s request timeout)
+- Core named pipe session switches to PIPE_WAIT after accept for reliable .NET client I/O
+
+---
+
 ## [1.0.0-rc.5] — 2026-09-15
 
 ### Fixed

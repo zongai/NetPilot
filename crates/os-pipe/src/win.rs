@@ -37,6 +37,13 @@ extern "system" {
     ) -> i32;
 
     fn GetLastError() -> u32;
+
+    fn SetNamedPipeHandleState(
+        hNamedPipe: RawHandle,
+        lpMode: *const u32,
+        lpMaxCollectionCount: *mut u32,
+        lpCollectDataTimeout: *mut u32,
+    ) -> i32;
 }
 
 const INVALID_HANDLE_VALUE: RawHandle = -1isize as RawHandle;
@@ -44,6 +51,7 @@ const PIPE_ACCESS_DUPLEX: u32 = 0x0000_0003;
 const PIPE_TYPE_BYTE: u32 = 0x0000_0000;
 const PIPE_READMODE_BYTE: u32 = 0x0000_0000;
 const PIPE_NOWAIT: u32 = 0x0000_0001;
+const PIPE_WAIT: u32 = 0x0000_0000;
 const PIPE_UNLIMITED_INSTANCES: u32 = 255;
 const ERROR_PIPE_CONNECTED: u32 = 535;
 const ERROR_PIPE_LISTENING: u32 = 536;
@@ -125,6 +133,12 @@ impl NamedPipeListener {
             return Err(PipeTransportError::Io(io::Error::from_raw_os_error(
                 err as i32,
             )));
+        }
+
+        // Session I/O: switch off NOWAIT so client writes are readable without spin races.
+        let mode: u32 = PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT;
+        unsafe {
+            let _ = SetNamedPipeHandleState(handle, &mode, ptr::null_mut(), ptr::null_mut());
         }
 
         Ok(NamedPipeStream {

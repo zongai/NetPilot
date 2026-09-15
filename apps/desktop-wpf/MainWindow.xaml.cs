@@ -35,7 +35,7 @@ public partial class MainWindow : Window
     {
         _ipcReady = false;
         Exception? last = null;
-        StatusText.Text = "Connecting to Core…";
+        StatusText.Text = "Connecting to Core… (pipe)";
 
         for (var attempt = 1; attempt <= 3; attempt++)
         {
@@ -55,14 +55,16 @@ public partial class MainWindow : Window
                     }
                 }
 
+                StatusText.Text = "Handshaking with Core…";
                 // Prefer simple ping; fall back to health.check / runtime.state.
                 JsonElement resp;
                 try
                 {
                     resp = await _ipc.RequestAsync("ping");
                 }
-                catch
+                catch (Exception pingEx)
                 {
+                    StatusText.Text = $"ping failed, try health… ({pingEx.Message})";
                     resp = await _ipc.RequestAsync("health.check");
                 }
 
