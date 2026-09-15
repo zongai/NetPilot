@@ -1,9 +1,9 @@
-#![allow(dead_code)]
-#![allow(clippy::all)]
 //! Process discovery and identity (NP-085..088 + Windows live resolver).
 
 #![cfg_attr(windows, allow(unsafe_code))]
 #![cfg_attr(not(windows), forbid(unsafe_code))]
+#![allow(dead_code)]
+#![allow(clippy::all)]
 
 mod discovery;
 mod identity;

@@ -1,9 +1,10 @@
-#![allow(dead_code)]
-#![allow(clippy::all)]
 //! System route injection and interface address configuration (Windows IP Helper).
 
 #![cfg_attr(not(windows), allow(dead_code))]
 #![cfg_attr(windows, allow(unsafe_code))]
+#![allow(dead_code)]
+#![allow(clippy::all)]
+
 
 use std::net::Ipv4Addr;
 

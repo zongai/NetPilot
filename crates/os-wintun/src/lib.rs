@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-#![allow(clippy::all)]
 //! Dynamic loader + full Wintun FFI surface (`wintun.dll`).
 //!
 //! Does not link against Wintun at build time. On non-Windows targets every
@@ -7,6 +5,9 @@
 
 #![cfg_attr(not(windows), allow(dead_code))]
 #![allow(unsafe_code)] // Win32 LoadLibrary / GetProcAddress / Wintun FFI
+#![allow(dead_code)]
+#![allow(clippy::all)]
+
 
 use std::path::{Path, PathBuf};
 
