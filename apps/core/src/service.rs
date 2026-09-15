@@ -16,7 +16,7 @@ use netpilot_diagnostics::{ConnectionLog, ConnectionManager, LogStore};
 use netpilot_dns::{DnsQuery, SystemResolver};
 use netpilot_engine::{start_socks_inbound, TrafficEngine};
 use netpilot_ipc::{
-    parse_rules_decide_payload, register_health_handlers, ErrorBody, HealthStatus, IpcEnvelope,
+    parse_proxy_upsert_payload, parse_rules_decide_payload, register_health_handlers, ErrorBody, HealthStatus, IpcEnvelope,
     MessageKind, RequestRouter, RouteError, RouteOutcome, DEFAULT_PIPE_NAME,
 };
 use netpilot_os_pipe::{bare_name, NamedPipeListener, PipeSession, PipeTransportError};
@@ -398,56 +398,23 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
 
     let engine_prof = engine.clone();
     router.register("proxy.upsert", move |req| {
-        let payload = req
-            .payload
-            .as_ref()
-            .ok_or(RouteError::InvalidInput("missing payload"))?;
-        let id = payload
-            .get("id")
-            .and_then(|v| v.as_str())
-            .ok_or(RouteError::InvalidInput("id"))?;
-        let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or(id);
-        let server = payload
-            .get("server")
-            .and_then(|v| v.as_str())
-            .ok_or(RouteError::InvalidInput("server"))?;
-        let port = payload
-            .get("port")
-            .and_then(|v| v.as_u64())
-            .ok_or(RouteError::InvalidInput("port"))? as u16;
-        let proto_s = payload
-            .get("protocol")
-            .and_then(|v| v.as_str())
-            .unwrap_or("socks5");
-        let protocol =
-            ProtocolKind::parse(proto_s).ok_or(RouteError::InvalidInput("unknown protocol"))?;
+        // Canonical: { id, server, port, name?, protocol?, password?, uuid?, ... }
+        let parsed = parse_proxy_upsert_payload(req.payload.as_ref())
+            .map_err(|e| RouteError::InvalidInput(e.as_str()))?;
+        let protocol = ProtocolKind::parse(&parsed.protocol)
+            .ok_or(RouteError::InvalidInput("unknown protocol"))?;
         let profile = ProxyProfile {
-            id: id.into(),
-            name: name.into(),
+            id: parsed.id.clone(),
+            name: parsed.name.clone(),
             protocol,
             transport: None,
-            server: server.into(),
-            port,
-            password: payload
-                .get("password")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
-            uuid: payload
-                .get("uuid")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
-            username: payload
-                .get("username")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
-            sni: payload
-                .get("sni")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
-            alpn: payload
-                .get("alpn")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
+            server: parsed.server.clone(),
+            port: parsed.port,
+            password: parsed.password.clone(),
+            uuid: parsed.uuid.clone(),
+            username: parsed.username.clone(),
+            sni: parsed.sni.clone(),
+            alpn: parsed.alpn.clone(),
             path: None,
             host: None,
             flow: None,
@@ -462,9 +429,15 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             .lock()
             .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
         g.add_profile(profile);
+        let count = g.profiles().len();
         Ok(
-            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
-                .with_payload(serde_json::json!({ "id": id, "accepted": true })),
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
+                serde_json::json!({
+                    "id": parsed.id,
+                    "accepted": true,
+                    "count": count,
+                }),
+            ),
         )
     });
 

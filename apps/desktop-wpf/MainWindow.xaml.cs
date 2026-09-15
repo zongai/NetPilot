@@ -162,31 +162,51 @@ public partial class MainWindow : Window
 
     private async Task<string> BuildProxiesAsync()
     {
-        var resp = await _ipc.RequestAsync("proxy.list");
         var sb = new StringBuilder();
         sb.AppendLine("Proxies");
         sb.AppendLine();
-        if (resp.TryGetProperty("payload", out var p)
-            && p.TryGetProperty("items", out var items)
-            && items.ValueKind == JsonValueKind.Array)
+        try
         {
-            if (items.GetArrayLength() == 0)
-                sb.AppendLine("(empty — subscription.update or proxy.upsert)");
-            foreach (var it in items.EnumerateArray())
+            // NP-INTEGRATION-002: UI → proxy.upsert → Core profile store → proxy.list
+            var upsertPayload = JsonSerializer.SerializeToElement(new
             {
-                var id = it.TryGetProperty("id", out var idv) ? idv.GetString() : "?";
-                var name = it.TryGetProperty("name", out var nv) ? nv.GetString() : id;
-                var server = it.TryGetProperty("server", out var sv) ? sv.GetString() : "";
-                var port = it.TryGetProperty("port", out var pv) ? pv.ToString() : "";
-                var proto = it.TryGetProperty("protocol", out var pr) ? pr.GetString() : "";
-                sb.AppendLine($"• {name} [{id}] {proto} {server}:{port}");
+                id = "demo-socks5",
+                name = "Demo SOCKS5",
+                server = "127.0.0.1",
+                port = 1080,
+                protocol = "socks5"
+            });
+            var upsert = await _ipc.RequestAsync("proxy.upsert", upsertPayload);
+            AppendIpcResult(sb, "proxy.upsert", upsert);
+
+            var list = await _ipc.RequestAsync("proxy.list");
+            AppendIpcResult(sb, "proxy.list", list);
+
+            if (list.TryGetProperty("payload", out var p)
+                && p.TryGetProperty("items", out var items)
+                && items.ValueKind == JsonValueKind.Array)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"nodes: {items.GetArrayLength()}");
+                foreach (var it in items.EnumerateArray())
+                {
+                    var id = it.TryGetProperty("id", out var idv) ? idv.GetString() : "?";
+                    var name = it.TryGetProperty("name", out var nv) ? nv.GetString() : id;
+                    var server = it.TryGetProperty("server", out var sv) ? sv.GetString() : "";
+                    var port = it.TryGetProperty("port", out var pv) ? pv.ToString() : "";
+                    var proto = it.TryGetProperty("protocol", out var pr) ? pr.GetString() : "";
+                    sb.AppendLine($"• {name} [{id}] {proto} {server}:{port}");
+                }
+                if (p.TryGetProperty("selected", out var sel) && sel.ValueKind != JsonValueKind.Null)
+                    sb.AppendLine($"Selected: {sel.GetString()}");
             }
-            if (p.TryGetProperty("selected", out var sel) && sel.ValueKind != JsonValueKind.Null)
-                sb.AppendLine($"\nSelected: {sel.GetString()}");
+        }
+        catch (Exception ex)
+        {
+            sb.AppendLine($"IPC error: {ex.Message}");
         }
         return sb.ToString();
     }
-
 
     private async Task<string> BuildRulesAsync()
     {

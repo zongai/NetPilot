@@ -71,6 +71,20 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        if (page == AppPage.Proxies)
+        {
+            var block = new TextBlock
+            {
+                Text = "Proxies\nLoading proxy.upsert…",
+                FontSize = 18,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(8),
+            };
+            ContentFrame.Content = block;
+            _ = LoadProxiesPageAsync(block);
+            return;
+        }
+
         if (page == AppPage.Rules)
         {
             var block = new TextBlock
@@ -89,8 +103,6 @@ public sealed partial class MainWindow : Window
         {
             AppPage.Home =>
                 $"Home\nRuntime: {Runtime.State}\nReady: {Runtime.Ready}\nIPC: {Runtime.IpcState}",
-            AppPage.Proxies =>
-                $"Proxies\nNodes: {Proxies.Nodes.Count}\nGroups: {Proxies.Groups.Count}\nSelected: {Proxies.SelectedNode?.Name}",
             AppPage.Connections => Connections.DetailText,
             AppPage.Logs => $"Logs\nLines: {Logs.Lines.Count}",
             AppPage.Diagnostics => $"Diagnostics items: {Diagnostics.Items.Count}",
@@ -110,6 +122,36 @@ public sealed partial class MainWindow : Window
     /// <summary>
     /// Real Core IPC: rules.load then rules.decide with canonical payload.
     /// </summary>
+
+    private async Task LoadProxiesPageAsync(TextBlock block)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Proxies");
+        sb.AppendLine();
+        try
+        {
+            if (_ipc.State != IpcConnectionState.Connected)
+                await _ipc.ConnectAsync().ConfigureAwait(true);
+
+            var upsert = await _ipc
+                .RequestAsync(
+                    "proxy.upsert",
+                    "{\"id\":\"demo-socks5\",\"name\":\"Demo SOCKS5\",\"server\":\"127.0.0.1\",\"port\":1080,\"protocol\":\"socks5\"}")
+                .ConfigureAwait(true);
+            AppendDto(sb, "proxy.upsert", upsert);
+
+            var list = await _ipc.RequestAsync("proxy.list", null).ConfigureAwait(true);
+            AppendDto(sb, "proxy.list", list);
+            if (!string.IsNullOrEmpty(list.PayloadJson))
+                sb.AppendLine($"(raw payload listed above)");
+        }
+        catch (Exception ex)
+        {
+            sb.AppendLine($"IPC error: {ex.Message}");
+        }
+        block.Text = sb.ToString();
+    }
+
     private async Task LoadRulesPageAsync(TextBlock block)
     {
         var sb = new StringBuilder();

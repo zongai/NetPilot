@@ -61,3 +61,20 @@ Examples:
 **Success payload:** `outbound`, `explanation`, `matcher`, echo `request`.
 
 Related: `rules.load` requires `{ "text": "<rule lines>" }`.
+
+## proxy.upsert / proxy.list (NP-INTEGRATION-002)
+
+**Operation:** `proxy.upsert`
+
+| Field | Type | Required |
+|-------|------|----------|
+| `id` | string | yes |
+| `server` | string | yes |
+| `port` | number (1–65535) | yes |
+| `name` | string | no (defaults to id) |
+| `protocol` | string | no (default `socks5`) |
+| `password` / `uuid` / `username` / `sni` / `alpn` | string | no |
+
+Success payload: `{ "id", "accepted": true, "count": <usize> }`.
+
+**Operation:** `proxy.list` — no payload. Returns `{ "items": [...], "selected": ... }` from Core profile store.
