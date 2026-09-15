@@ -187,6 +187,50 @@ public partial class MainWindow : Window
         return sb.ToString();
     }
 
+
+    private async Task<string> BuildRulesAsync()
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Rules");
+        sb.AppendLine();
+        try
+        {
+            var decide = await _ipc.RequestAsync("rules.decide");
+            if (decide.TryGetProperty("payload", out var payload))
+                sb.AppendLine($"decide => {payload}");
+            else
+                sb.AppendLine(decide.ToString());
+        }
+        catch (Exception ex)
+        {
+            sb.AppendLine($"rules.decide: {ex.Message}");
+            sb.AppendLine("Load rules via rules.load from Core first.");
+        }
+        return sb.ToString();
+    }
+
+    private async Task<string> BuildLogsAsync()
+    {
+        var resp = await _ipc.RequestAsync("logs.list");
+        var sb = new StringBuilder();
+        sb.AppendLine("Logs");
+        sb.AppendLine();
+        if (resp.TryGetProperty("payload", out var p)
+            && p.TryGetProperty("items", out var items)
+            && items.ValueKind == JsonValueKind.Array)
+        {
+            if (items.GetArrayLength() == 0)
+                sb.AppendLine("(empty)");
+            foreach (var it in items.EnumerateArray())
+            {
+                var level = it.TryGetProperty("level", out var lv) ? lv.GetString() : "?";
+                var msg = it.TryGetProperty("message", out var m) ? m.GetString() : "";
+                sb.AppendLine($"[{level}] {msg}");
+            }
+        }
+        return sb.ToString();
+    }
+
     private async Task<string> BuildConnectionsAsync()
     {
         var resp = await _ipc.RequestAsync("connections.list");
