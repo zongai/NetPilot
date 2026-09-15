@@ -10,53 +10,91 @@ public partial class MainWindow : Window
     private bool _ready;
     private readonly CoreIpcClient _ipc = new();
     private string _coreState = "disconnected";
+    /// <summary>True only after a successful IPC handshake (pipe.IsConnected alone is unreliable).</summary>
+    private bool _ipcReady;
 
     public MainWindow()
     {
         InitializeComponent();
         _ready = true;
-
-        if (NavList.Items.Count > 0)
-            NavList.SelectedIndex = 0;
-        else
-            ShowPage("home");
-
-        Loaded += async (_, _) => await TryConnectCoreAsync();
+        // Defer navigation until after Core handshake to avoid permanent "offline" body text.
+        Loaded += async (_, _) =>
+        {
+            await TryConnectCoreAsync();
+            if (NavList.Items.Count > 0 && NavList.SelectedIndex < 0)
+                NavList.SelectedIndex = 0;
+            else if (NavList.SelectedItem is ListBoxItem { Tag: string tag })
+                await ShowPageAsync(tag);
+            else
+                await ShowPageAsync("home");
+        };
         Closed += (_, _) => _ipc.Dispose();
     }
 
     private async Task TryConnectCoreAsync()
     {
-        try
+        _ipcReady = false;
+        Exception? last = null;
+        StatusText.Text = "Connecting to Core…";
+
+        for (var attempt = 1; attempt <= 3; attempt++)
         {
-            StatusText.Text = "Connecting to Core…";
             try
             {
-                await _ipc.ConnectAsync(2500);
-            }
-            catch
-            {
-                // NP-146: Desktop Core launcher — start sibling netpilot-core.exe once.
-                TryLaunchCore();
-                await Task.Delay(900);
-                await _ipc.ConnectAsync(5000);
-            }
+                if (!_ipc.IsConnected)
+                {
+                    try
+                    {
+                        await _ipc.ConnectAsync(attempt == 1 ? 2500 : 5000);
+                    }
+                    catch when (attempt == 1)
+                    {
+                        TryLaunchCore();
+                        await Task.Delay(1200);
+                        await _ipc.ConnectAsync(6000);
+                    }
+                }
 
-            var resp = await _ipc.RequestAsync("health.check");
-            _coreState = resp.TryGetProperty("payload", out var payload)
-                && payload.TryGetProperty("runtime_state", out var st)
-                ? st.GetString() ?? "unknown"
-                : "connected";
-            StatusText.Text = $"Core: {_coreState}";
-            if (NavList.SelectedItem is ListBoxItem { Tag: string tag })
-                await ShowPageAsync(tag);
+                // Prefer simple ping; fall back to health.check / runtime.state.
+                JsonElement resp;
+                try
+                {
+                    resp = await _ipc.RequestAsync("ping");
+                }
+                catch
+                {
+                    resp = await _ipc.RequestAsync("health.check");
+                }
+
+                _ipcReady = true;
+                _coreState = "connected";
+                if (resp.TryGetProperty("payload", out var payload))
+                {
+                    if (payload.TryGetProperty("runtime_state", out var st))
+                        _coreState = st.GetString() ?? "connected";
+                    else if (payload.TryGetProperty("pong", out _))
+                        _coreState = "running";
+                    else if (payload.TryGetProperty("state", out var st2))
+                        _coreState = st2.GetString() ?? "connected";
+                }
+
+                StatusText.Text = $"Core: {_coreState} (IPC ok)";
+                return;
+            }
+            catch (Exception ex)
+            {
+                last = ex;
+                _ipcReady = false;
+                try { _ipc.Disconnect(); } catch { /* ignore */ }
+                await Task.Delay(400 * attempt);
+            }
         }
-        catch (Exception ex)
-        {
-            _coreState = "disconnected";
-            StatusText.Text = "Core offline (start netpilot-core.exe)";
-            System.Diagnostics.Debug.WriteLine(ex);
-        }
+
+        _coreState = "disconnected";
+        StatusText.Text = last is null
+            ? "Core offline (start netpilot-core.exe)"
+            : $"Core offline: {last.Message}";
+        System.Diagnostics.Debug.WriteLine(last);
     }
 
     /// <summary>NP-146: launch netpilot-core.exe next to this GUI when offline.</summary>
@@ -105,10 +143,18 @@ public partial class MainWindow : Window
     {
         if (BodyText is null || StatusText is null) return;
 
-        if (!_ipc.IsConnected)
+        if (!_ipcReady || !_ipc.IsConnected)
         {
-            BodyText.Text = OfflineText(tag);
-            return;
+            // One reconnect attempt when user navigates while offline.
+            if (!_ipcReady)
+            {
+                await TryConnectCoreAsync();
+            }
+            if (!_ipcReady)
+            {
+                BodyText.Text = OfflineText(tag);
+                return;
+            }
         }
 
         try
@@ -493,10 +539,13 @@ return sb.ToString();
     {
         try
         {
-            _ipc.Dispose();
+            _ipc.Disconnect();
         }
         catch { /* ignore */ }
+        _ipcReady = false;
         await TryConnectCoreAsync();
+        if (NavList.SelectedItem is ListBoxItem { Tag: string tag })
+            await ShowPageAsync(tag);
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e)
