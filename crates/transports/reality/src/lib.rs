@@ -4,6 +4,8 @@
 //! `RealitySession`; ClientHello templates mimic browser JA3/fingerprint order.
 
 #![forbid(unsafe_code)]
+#![allow(clippy::needless_borrows_for_generic_args)]
+
 
 pub use netpilot_protocol_common::TransportId;
 pub use netpilot_transport_tls::{RealityTlsOverlay, TlsClientConfig, TlsClientSession};
@@ -335,10 +337,10 @@ pub fn fingerprint_digest(cfg: &RealityConfig) -> String {
     h.update(cfg.fingerprint.as_str().as_bytes());
     h.update(cfg.server_name.as_bytes());
     for c in cipher_suites(cfg.fingerprint) {
-        h.update(&c.to_be_bytes());
+        h.update(c.to_be_bytes());
     }
     for e in extension_order(cfg.fingerprint) {
-        h.update(&e.to_be_bytes());
+        h.update(e.to_be_bytes());
     }
     hex_encode(&h.finalize()[..8])
 }

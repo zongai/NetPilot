@@ -6,14 +6,22 @@
 //! - Obfs: plain
 
 #![forbid(unsafe_code)]
+#![allow(clippy::needless_borrows_for_generic_args)]
+
 
 pub use netpilot_protocol_common::{Endpoint, ProtocolId};
 
-use md5::{Digest as Md5Digest, Md5};
+use md5::{Digest, Md5};
 use rand::RngCore;
 use sha1::{Digest as Sha1Digest, Sha1};
 
 pub const CRATE_NAME: &str = "netpilot-protocol-shadowsocksr";
+
+#[inline]
+fn _use_digest_traits() {
+    let _ = <Md5 as Digest>::new();
+    let _ = <Sha1 as Sha1Digest>::new();
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SsrMethod {

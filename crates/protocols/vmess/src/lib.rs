@@ -8,6 +8,8 @@
 //! Reference: VMess AEAD (VLESS-era VMess, alterId=0).
 
 #![forbid(unsafe_code)]
+#![allow(clippy::needless_borrows_for_generic_args)]
+
 
 pub use netpilot_protocol_common::{Endpoint, ProtocolId, TransportId};
 
@@ -15,6 +17,8 @@ use aes_gcm::aead::{Aead, KeyInit};
 use aes_gcm::{Aes128Gcm, Nonce};
 use hmac::{Hmac, Mac};
 use md5::{Digest as Md5Digest, Md5};
+#[allow(dead_code)]
+fn _md5_marker() { let _ = <Md5 as Md5Digest>::new(); }
 use rand::{Rng, RngCore};
 use sha2::{Digest, Sha256};
 
