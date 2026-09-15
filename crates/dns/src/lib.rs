@@ -12,6 +12,7 @@ mod metrics;
 mod policy;
 mod resolver;
 mod routing;
+mod runtime;
 mod system;
 mod transport;
 
@@ -22,6 +23,7 @@ pub use leak::{LeakGuard, LeakRisk};
 pub use metrics::DnsMetrics;
 pub use policy::{DnsPolicy, ResolveMode};
 pub use resolver::{DnsError, DnsQuery, DnsResolver, DnsResponse};
+pub use runtime::DnsRuntime;
 pub use routing::{DnsRoute, DnsRoutePolicy};
 pub use system::{SystemResolver, SystemResolverInfo};
 pub use transport::{

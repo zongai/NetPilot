@@ -1,0 +1,25 @@
+﻿task_id,stage,stage_name,title,goal,dependency,primary_file_target
+NP-121,S11,Airport Subscription Enhancement,Subscription Manager,订阅源统一管理模型,None,crates/subscription/src/manager.rs
+NP-122,S11,Airport Subscription Enhancement,Subscription Profile,订阅名称、URL、启用状态、更新时间及更新策略,NP-121,crates/subscription/src/profile.rs
+NP-123,S11,Airport Subscription Enhancement,Subscription HTTP Fetcher,HTTP/HTTPS 订阅获取与超时、取消、错误处理,NP-122,crates/subscription/src/fetcher.rs
+NP-124,S11,Airport Subscription Enhancement,HTTP Headers & User-Agent,自定义 Header、User-Agent 与认证 Header,NP-123,crates/subscription/src/http.rs
+NP-125,S11,Airport Subscription Enhancement,ETag & Last-Modified,条件请求、ETag 与 Last-Modified 支持,NP-124,crates/subscription/src/cache/http_cache.rs
+NP-126,S11,Airport Subscription Enhancement,Subscription Cache,本地缓存、版本保留与缓存一致性,NP-125,crates/subscription/src/cache/mod.rs
+NP-127,S11,Airport Subscription Enhancement,Subscription Update Policy,手动、启动、定时自动更新策略,NP-126,crates/subscription/src/update_policy.rs
+NP-128,S11,Airport Subscription Enhancement,Update Failure Rollback,更新失败时保留旧版本并安全回滚,NP-127,crates/subscription/src/updater.rs
+NP-129,S11,Airport Subscription Enhancement,Base64 Decoder,Base64/Base64URL 内容检测与解码,NP-128,crates/subscription/src/decoder.rs
+NP-130,S11,Airport Subscription Enhancement,URI List Parser,解析 ss://、ssr://、vmess://、vless://、trojan://,NP-129,crates/subscription/src/parsers/uri.rs
+NP-131,S11,Airport Subscription Enhancement,Clash YAML Parser,Clash/Clash Meta/Mihomo YAML 解析,NP-130,crates/subscription/src/parsers/clash.rs
+NP-132,S11,Airport Subscription Enhancement,Sing-box JSON Parser,Sing-box outbound/provider JSON 解析,NP-131,crates/subscription/src/parsers/singbox.rs
+NP-133,S11,Airport Subscription Enhancement,Subscription Normalizer,多格式转换为统一 ProxyProfile,NP-132,crates/subscription/src/normalizer.rs
+NP-134,S11,Airport Subscription Enhancement,Protocol Parameter Mapping,Reality/Vision/WS/gRPC/TLS 等参数映射,NP-133,crates/subscription/src/normalizer/protocol_mapping.rs
+NP-135,S11,Airport Subscription Enhancement,Node Deduplication,节点稳定指纹与重复节点合并,NP-134,crates/subscription/src/node_fingerprint.rs
+NP-136,S11,Airport Subscription Enhancement,Node Filtering,名称、协议、地区、关键词等过滤,NP-135,crates/subscription/src/filter.rs
+NP-137,S11,Airport Subscription Enhancement,Node Rename,节点名称规范化与自定义重命名,NP-136,crates/subscription/src/rename.rs
+NP-138,S11,Airport Subscription Enhancement,Subscription Groups,按订阅自动建立 Proxy Group,NP-137,crates/subscription/src/groups.rs
+NP-139,S11,Airport Subscription Enhancement,Subscription Merge,多订阅合并及冲突处理,NP-138,crates/subscription/src/merge.rs
+NP-140,S11,Airport Subscription Enhancement,Subscription Metadata,Subscription-Userinfo 流量与到期信息解析,NP-139,crates/subscription/src/metadata.rs
+NP-141,S11,Airport Subscription Enhancement,Subscription Security,HTTPS、证书及危险/异常配置校验,NP-140,crates/subscription/src/security.rs
+NP-142,S11,Airport Subscription Enhancement,Subscription Diagnostics,获取、解码、解析、映射失败诊断,NP-141,crates/subscription/src/diagnostics.rs
+NP-143,S11,Airport Subscription Enhancement,Subscription UI,订阅管理、更新、状态和流量信息 UI,NP-142,apps/desktop/SubscriptionPage.xaml
+NP-144,S11,Airport Subscription Enhancement,Subscription E2E,多格式机场订阅完整端到端测试,NP-143,tests/subscription_e2e.rs

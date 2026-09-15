@@ -5,14 +5,20 @@
 
 #![forbid(unsafe_code)]
 
+mod connection;
+mod connection_registry;
 mod health;
 mod instance;
 mod logging;
+mod log_store;
 mod shutdown;
 
+pub use connection::{ConnectionEvent, ConnectionId, ConnectionIdGen, ConnectionMeta, ConnectionState, ConnectionTiming};
+pub use connection_registry::ConnectionRegistry;
 pub use health::{CoreHealth, HealthLevel};
 pub use instance::InstanceLock;
 pub use logging::{log_line, max_level, redact_secrets, set_max_level, LogLevel};
+pub use log_store::{LogEntry, LogStore};
 pub use shutdown::{ShutdownCoordinator, ShutdownReason};
 
 use std::time::Duration;

@@ -3,9 +3,12 @@
 #![forbid(unsafe_code)]
 
 mod endpoint;
+mod profile;
 mod groups;
 mod health;
 mod lifecycle;
+mod registry;
+mod runtime;
 mod secrets;
 
 pub use endpoint::{
@@ -14,6 +17,8 @@ pub use endpoint::{
 pub use groups::{apply_selection, select_member, GroupError, MemberHealth};
 pub use health::{HealthRecord, HealthState, HealthTable, ProbePolicy};
 pub use lifecycle::{LifecycleError, LifecycleManager};
+pub use registry::ProxyRegistry;
+pub use runtime::{ActiveProxyRuntime, RuntimeSnapshot};
 pub use secrets::{leaks_secret, redact_profile, redacted_field_map, REDACTED, SECRET_FIELD_NAMES};
 
 use serde::{Deserialize, Serialize};

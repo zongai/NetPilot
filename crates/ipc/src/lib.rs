@@ -8,16 +8,22 @@
 
 mod auth;
 mod client;
+mod dispatcher;
 mod error_map;
 mod events;
+mod handshake;
 mod health;
 mod negotiate;
 mod router;
+mod security;
 mod server;
 mod timeout;
 
 pub use auth::{privilege_for_operation, AuthDecision, LocalAuthPolicy, PeerIdentity, Privilege};
 pub use client::{ClientState, NamedPipeClient, PipeClientConfig};
+pub use dispatcher::CommandDispatcher;
+pub use handshake::{client_hello, server_handshake, HandshakeError, HandshakeResult};
+pub use security::{authorize, redact_payload_for_log, requires_privileged};
 pub use error_map::{
     code_for_kind, ensure_error_status, error_response, map_pipe_error, map_route_error,
 };

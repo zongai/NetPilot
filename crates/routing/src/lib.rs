@@ -2,6 +2,12 @@
 
 #![forbid(unsafe_code)]
 
+mod dial;
+mod engine;
+
+pub use dial::{validate_dial_target, DialPolicy, DialTarget};
+pub use engine::engine_from_text;
+
 pub use netpilot_rules::{
     conformance_cases, domain_matches, ip_in_cidr, parse_cidr, parse_ip, parse_rule_line,
     parse_rules, run_case, Cidr, DomainMatchKind, FixtureCase, IndexedRules, IpMatchError,

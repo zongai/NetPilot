@@ -1,0 +1,218 @@
+{
+  "nodes": [
+    {
+      "id": "NP-121",
+      "stage": "S11",
+      "title": "Subscription Manager"
+    },
+    {
+      "id": "NP-122",
+      "stage": "S11",
+      "title": "Subscription Profile"
+    },
+    {
+      "id": "NP-123",
+      "stage": "S11",
+      "title": "Subscription HTTP Fetcher"
+    },
+    {
+      "id": "NP-124",
+      "stage": "S11",
+      "title": "HTTP Headers & User-Agent"
+    },
+    {
+      "id": "NP-125",
+      "stage": "S11",
+      "title": "ETag & Last-Modified"
+    },
+    {
+      "id": "NP-126",
+      "stage": "S11",
+      "title": "Subscription Cache"
+    },
+    {
+      "id": "NP-127",
+      "stage": "S11",
+      "title": "Subscription Update Policy"
+    },
+    {
+      "id": "NP-128",
+      "stage": "S11",
+      "title": "Update Failure Rollback"
+    },
+    {
+      "id": "NP-129",
+      "stage": "S11",
+      "title": "Base64 Decoder"
+    },
+    {
+      "id": "NP-130",
+      "stage": "S11",
+      "title": "URI List Parser"
+    },
+    {
+      "id": "NP-131",
+      "stage": "S11",
+      "title": "Clash YAML Parser"
+    },
+    {
+      "id": "NP-132",
+      "stage": "S11",
+      "title": "Sing-box JSON Parser"
+    },
+    {
+      "id": "NP-133",
+      "stage": "S11",
+      "title": "Subscription Normalizer"
+    },
+    {
+      "id": "NP-134",
+      "stage": "S11",
+      "title": "Protocol Parameter Mapping"
+    },
+    {
+      "id": "NP-135",
+      "stage": "S11",
+      "title": "Node Deduplication"
+    },
+    {
+      "id": "NP-136",
+      "stage": "S11",
+      "title": "Node Filtering"
+    },
+    {
+      "id": "NP-137",
+      "stage": "S11",
+      "title": "Node Rename"
+    },
+    {
+      "id": "NP-138",
+      "stage": "S11",
+      "title": "Subscription Groups"
+    },
+    {
+      "id": "NP-139",
+      "stage": "S11",
+      "title": "Subscription Merge"
+    },
+    {
+      "id": "NP-140",
+      "stage": "S11",
+      "title": "Subscription Metadata"
+    },
+    {
+      "id": "NP-141",
+      "stage": "S11",
+      "title": "Subscription Security"
+    },
+    {
+      "id": "NP-142",
+      "stage": "S11",
+      "title": "Subscription Diagnostics"
+    },
+    {
+      "id": "NP-143",
+      "stage": "S11",
+      "title": "Subscription UI"
+    },
+    {
+      "id": "NP-144",
+      "stage": "S11",
+      "title": "Subscription E2E"
+    }
+  ],
+  "edges": [
+    {
+      "from": "NP-121",
+      "to": "NP-122"
+    },
+    {
+      "from": "NP-122",
+      "to": "NP-123"
+    },
+    {
+      "from": "NP-123",
+      "to": "NP-124"
+    },
+    {
+      "from": "NP-124",
+      "to": "NP-125"
+    },
+    {
+      "from": "NP-125",
+      "to": "NP-126"
+    },
+    {
+      "from": "NP-126",
+      "to": "NP-127"
+    },
+    {
+      "from": "NP-127",
+      "to": "NP-128"
+    },
+    {
+      "from": "NP-128",
+      "to": "NP-129"
+    },
+    {
+      "from": "NP-129",
+      "to": "NP-130"
+    },
+    {
+      "from": "NP-130",
+      "to": "NP-131"
+    },
+    {
+      "from": "NP-131",
+      "to": "NP-132"
+    },
+    {
+      "from": "NP-132",
+      "to": "NP-133"
+    },
+    {
+      "from": "NP-133",
+      "to": "NP-134"
+    },
+    {
+      "from": "NP-134",
+      "to": "NP-135"
+    },
+    {
+      "from": "NP-135",
+      "to": "NP-136"
+    },
+    {
+      "from": "NP-136",
+      "to": "NP-137"
+    },
+    {
+      "from": "NP-137",
+      "to": "NP-138"
+    },
+    {
+      "from": "NP-138",
+      "to": "NP-139"
+    },
+    {
+      "from": "NP-139",
+      "to": "NP-140"
+    },
+    {
+      "from": "NP-140",
+      "to": "NP-141"
+    },
+    {
+      "from": "NP-141",
+      "to": "NP-142"
+    },
+    {
+      "from": "NP-142",
+      "to": "NP-143"
+    },
+    {
+      "from": "NP-143",
+      "to": "NP-144"
+    }
+  ]
+}

@@ -8,6 +8,7 @@
 mod discovery;
 mod identity;
 mod lifecycle;
+mod matcher;
 mod path;
 
 #[cfg(windows)]
@@ -16,6 +17,7 @@ mod win;
 pub use discovery::{MockProcessTable, ProcessResolver, ProcessSnapshot};
 pub use identity::ProcessIdentity;
 pub use lifecycle::{PidEvent, PidTracker};
+pub use matcher::{file_name, normalize_process_path, ProcessMatch, ProcessMatchKind};
 pub use path::{normalize_exe_path, path_matches};
 
 pub const CRATE_NAME: &str = "netpilot-process";

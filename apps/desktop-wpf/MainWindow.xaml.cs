@@ -117,7 +117,7 @@ public partial class MainWindow : Window
             {
                 "home" => await BuildHomeAsync(),
                 "proxies" => await BuildProxiesAsync(),
-                "rules" => "Rules\n\nLoad via Core IPC rules.load.\nUse Diagnostics to test rules.decide.",
+                "rules" => await BuildRulesAsync(),
                 "connections" => await BuildConnectionsAsync(),
                 "logs" => await BuildLogsAsync(),
                 "diagnostics" => await BuildDiagnosticsAsync(),
@@ -271,7 +271,14 @@ public partial class MainWindow : Window
             sb.AppendLine($"ping: {(ping.TryGetProperty("status", out var s) ? s.GetString() : "?")}");
         }
         catch (Exception ex) { sb.AppendLine(ex.Message); }
-        return sb.ToString();
+                try
+        {
+            var sp = await _ipc.RequestAsync("system_proxy.query");
+            if (sp.TryGetProperty("payload", out var p))
+                sb.AppendLine($"system_proxy: {p}");
+        }
+        catch (Exception ex) { sb.AppendLine($"system_proxy: {ex.Message}"); }
+return sb.ToString();
     }
 
     private async void RefreshCore_Click(object sender, RoutedEventArgs e)
