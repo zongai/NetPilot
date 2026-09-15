@@ -5,7 +5,8 @@ use std::time::Instant;
 use crate::conn::{ConnTable, FourTuple, TcpConn};
 use crate::ipv4::{addr_str, build_ipv4, parse_ipv4};
 use crate::tcp::{
-    build_tcp, parse_tcp, set_tcp_checksum, TcpState, FLAG_ACK, FLAG_FIN, FLAG_PSH, FLAG_RST, FLAG_SYN,
+    build_tcp, parse_tcp, set_tcp_checksum, TcpState, FLAG_ACK, FLAG_FIN, FLAG_PSH, FLAG_RST,
+    FLAG_SYN,
 };
 use crate::udp::parse_udp;
 
