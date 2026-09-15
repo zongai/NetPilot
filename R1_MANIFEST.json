@@ -1,0 +1,19 @@
+{
+  "name": "NetPilot R1 Release Add-on Task Pack",
+  "version": "1.0.0",
+  "baseline": [
+    "V5 NP-145..NP-240",
+    "S11"
+  ],
+  "task_range": [
+    "NP-241",
+    "NP-264"
+  ],
+  "task_count": 24,
+  "verified": true,
+  "dag": {
+    "nodes": 24,
+    "edges": 23
+  },
+  "status": "release_tasks_only_not_final_software"
+}

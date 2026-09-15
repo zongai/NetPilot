@@ -1,0 +1,220 @@
+{
+  "node_count": 24,
+  "edge_count": 23,
+  "nodes": [
+    {
+      "id": "NP-241",
+      "stage": "R1",
+      "title": "Release build configuration"
+    },
+    {
+      "id": "NP-242",
+      "stage": "R1",
+      "title": "Rust Core release build"
+    },
+    {
+      "id": "NP-243",
+      "stage": "R1",
+      "title": "WinUI 3 release build"
+    },
+    {
+      "id": "NP-244",
+      "stage": "R1",
+      "title": "Unified application versioning"
+    },
+    {
+      "id": "NP-245",
+      "stage": "R1",
+      "title": "Development/release configuration isolation"
+    },
+    {
+      "id": "NP-246",
+      "stage": "R1",
+      "title": "Runtime dependency collection"
+    },
+    {
+      "id": "NP-247",
+      "stage": "R1",
+      "title": "Wintun/driver dependency validation"
+    },
+    {
+      "id": "NP-248",
+      "stage": "R1",
+      "title": "Installer/data directory layout"
+    },
+    {
+      "id": "NP-249",
+      "stage": "R1",
+      "title": "Windows installer"
+    },
+    {
+      "id": "NP-250",
+      "stage": "R1",
+      "title": "Uninstaller and residue cleanup"
+    },
+    {
+      "id": "NP-251",
+      "stage": "R1",
+      "title": "First-run initialization"
+    },
+    {
+      "id": "NP-252",
+      "stage": "R1",
+      "title": "Core automatic startup/shutdown"
+    },
+    {
+      "id": "NP-253",
+      "stage": "R1",
+      "title": "Windows permission/UAC flow"
+    },
+    {
+      "id": "NP-254",
+      "stage": "R1",
+      "title": "Release logging/crash diagnostics"
+    },
+    {
+      "id": "NP-255",
+      "stage": "R1",
+      "title": "Release security review"
+    },
+    {
+      "id": "NP-256",
+      "stage": "R1",
+      "title": "Sensitive-data leak scan"
+    },
+    {
+      "id": "NP-257",
+      "stage": "R1",
+      "title": "Network/thread/resource leak test"
+    },
+    {
+      "id": "NP-258",
+      "stage": "R1",
+      "title": "Long-running stability test"
+    },
+    {
+      "id": "NP-259",
+      "stage": "R1",
+      "title": "Subscription release acceptance"
+    },
+    {
+      "id": "NP-260",
+      "stage": "R1",
+      "title": "Proxy/rules/TUN full acceptance"
+    },
+    {
+      "id": "NP-261",
+      "stage": "R1",
+      "title": "Windows compatibility matrix"
+    },
+    {
+      "id": "NP-262",
+      "stage": "R1",
+      "title": "Performance/resource acceptance"
+    },
+    {
+      "id": "NP-263",
+      "stage": "R1",
+      "title": "Release Candidate packaging"
+    },
+    {
+      "id": "NP-264",
+      "stage": "R1",
+      "title": "NetPilot 1.0 final release acceptance"
+    }
+  ],
+  "edges": [
+    {
+      "from": "NP-241",
+      "to": "NP-242"
+    },
+    {
+      "from": "NP-242",
+      "to": "NP-243"
+    },
+    {
+      "from": "NP-243",
+      "to": "NP-244"
+    },
+    {
+      "from": "NP-244",
+      "to": "NP-245"
+    },
+    {
+      "from": "NP-245",
+      "to": "NP-246"
+    },
+    {
+      "from": "NP-246",
+      "to": "NP-247"
+    },
+    {
+      "from": "NP-247",
+      "to": "NP-248"
+    },
+    {
+      "from": "NP-248",
+      "to": "NP-249"
+    },
+    {
+      "from": "NP-249",
+      "to": "NP-250"
+    },
+    {
+      "from": "NP-250",
+      "to": "NP-251"
+    },
+    {
+      "from": "NP-251",
+      "to": "NP-252"
+    },
+    {
+      "from": "NP-252",
+      "to": "NP-253"
+    },
+    {
+      "from": "NP-253",
+      "to": "NP-254"
+    },
+    {
+      "from": "NP-254",
+      "to": "NP-255"
+    },
+    {
+      "from": "NP-255",
+      "to": "NP-256"
+    },
+    {
+      "from": "NP-256",
+      "to": "NP-257"
+    },
+    {
+      "from": "NP-257",
+      "to": "NP-258"
+    },
+    {
+      "from": "NP-258",
+      "to": "NP-259"
+    },
+    {
+      "from": "NP-259",
+      "to": "NP-260"
+    },
+    {
+      "from": "NP-260",
+      "to": "NP-261"
+    },
+    {
+      "from": "NP-261",
+      "to": "NP-262"
+    },
+    {
+      "from": "NP-262",
+      "to": "NP-263"
+    },
+    {
+      "from": "NP-263",
+      "to": "NP-264"
+    }
+  ]
+}

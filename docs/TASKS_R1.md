@@ -1,0 +1,26 @@
+# R1 Release Tasks
+
+- NP-241 — Release build configuration — depends on V5 NP-240
+- NP-242 — Rust Core release build — depends on NP-241
+- NP-243 — WinUI 3 release build — depends on NP-242
+- NP-244 — Unified application versioning — depends on NP-243
+- NP-245 — Development/release configuration isolation — depends on NP-244
+- NP-246 — Runtime dependency collection — depends on NP-245
+- NP-247 — Wintun/driver dependency validation — depends on NP-246
+- NP-248 — Installer/data directory layout — depends on NP-247
+- NP-249 — Windows installer — depends on NP-248
+- NP-250 — Uninstaller and residue cleanup — depends on NP-249
+- NP-251 — First-run initialization — depends on NP-250
+- NP-252 — Core automatic startup/shutdown — depends on NP-251
+- NP-253 — Windows permission/UAC flow — depends on NP-252
+- NP-254 — Release logging/crash diagnostics — depends on NP-253
+- NP-255 — Release security review — depends on NP-254
+- NP-256 — Sensitive-data leak scan — depends on NP-255
+- NP-257 — Network/thread/resource leak test — depends on NP-256
+- NP-258 — Long-running stability test — depends on NP-257
+- NP-259 — Subscription release acceptance — depends on NP-258
+- NP-260 — Proxy/rules/TUN full acceptance — depends on NP-259
+- NP-261 — Windows compatibility matrix — depends on NP-260
+- NP-262 — Performance/resource acceptance — depends on NP-261
+- NP-263 — Release Candidate packaging — depends on NP-262
+- NP-264 — NetPilot 1.0 final release acceptance — depends on NP-263

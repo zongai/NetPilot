@@ -1,0 +1,5 @@
+# SHA-256 sums for R1 artifacts
+# Populate only after files exist on disk (NP-263).
+# Example:
+# <hash>  NetPilot-x64-1.0.0-rc.1.zip
+# <hash>  netpilot-core.exe
