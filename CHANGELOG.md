@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/)-inspired, versions align
 
 ---
 
+## [1.0.0-rc.7] — 2026-09-15
+
+### Fixed
+- Desktop freeze on Core reconnect / Refresh (Disconnect no longer sync-waits on request lock)
+- Cancel in-flight ReadAsync on reconnect; single-flight connect guard
+
+---
+
 ## [1.0.0-rc.6] — 2026-09-15
 
 ### Fixed

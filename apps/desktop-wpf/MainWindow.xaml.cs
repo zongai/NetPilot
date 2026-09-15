@@ -12,6 +12,7 @@ public partial class MainWindow : Window
     private string _coreState = "disconnected";
     /// <summary>True only after a successful IPC handshake (pipe.IsConnected alone is unreliable).</summary>
     private bool _ipcReady;
+    private bool _connectBusy;
 
     public MainWindow()
     {
@@ -33,70 +34,80 @@ public partial class MainWindow : Window
 
     private async Task TryConnectCoreAsync()
     {
+        if (_connectBusy)
+            return;
+        _connectBusy = true;
         _ipcReady = false;
         Exception? last = null;
-        StatusText.Text = "Connecting to Core… (pipe)";
-
-        for (var attempt = 1; attempt <= 3; attempt++)
+        try
         {
-            try
+            StatusText.Text = "Connecting to Core… (pipe)";
+            // Always drop prior session first so reconnect cannot deadlock.
+            _ipc.Disconnect();
+            await Task.Yield();
+
+            for (var attempt = 1; attempt <= 3; attempt++)
             {
-                if (!_ipc.IsConnected)
+                try
                 {
+                    StatusText.Text = $"Connecting to Core… (attempt {attempt}/3)";
                     try
                     {
-                        await _ipc.ConnectAsync(attempt == 1 ? 2500 : 5000);
+                        await _ipc.ConnectAsync(attempt == 1 ? 2000 : 4000).ConfigureAwait(true);
                     }
                     catch when (attempt == 1)
                     {
                         TryLaunchCore();
-                        await Task.Delay(1200);
-                        await _ipc.ConnectAsync(6000);
+                        await Task.Delay(1000).ConfigureAwait(true);
+                        await _ipc.ConnectAsync(5000).ConfigureAwait(true);
                     }
-                }
 
-                StatusText.Text = "Handshaking with Core…";
-                // Prefer simple ping; fall back to health.check / runtime.state.
-                JsonElement resp;
-                try
-                {
-                    resp = await _ipc.RequestAsync("ping");
-                }
-                catch (Exception pingEx)
-                {
-                    StatusText.Text = $"ping failed, try health… ({pingEx.Message})";
-                    resp = await _ipc.RequestAsync("health.check");
-                }
+                    StatusText.Text = "Handshaking with Core…";
+                    JsonElement resp;
+                    try
+                    {
+                        resp = await _ipc.RequestAsync("ping").ConfigureAwait(true);
+                    }
+                    catch (Exception pingEx)
+                    {
+                        StatusText.Text = $"ping failed, try health… ({pingEx.GetType().Name})";
+                        resp = await _ipc.RequestAsync("health.check").ConfigureAwait(true);
+                    }
 
-                _ipcReady = true;
-                _coreState = "connected";
-                if (resp.TryGetProperty("payload", out var payload))
-                {
-                    if (payload.TryGetProperty("runtime_state", out var st))
-                        _coreState = st.GetString() ?? "connected";
-                    else if (payload.TryGetProperty("pong", out _))
-                        _coreState = "running";
-                    else if (payload.TryGetProperty("state", out var st2))
-                        _coreState = st2.GetString() ?? "connected";
-                }
+                    _ipcReady = true;
+                    _coreState = "connected";
+                    if (resp.TryGetProperty("payload", out var payload))
+                    {
+                        if (payload.TryGetProperty("runtime_state", out var st))
+                            _coreState = st.GetString() ?? "connected";
+                        else if (payload.TryGetProperty("pong", out _))
+                            _coreState = "running";
+                        else if (payload.TryGetProperty("state", out var st2))
+                            _coreState = st2.GetString() ?? "connected";
+                    }
 
-                StatusText.Text = $"Core: {_coreState} (IPC ok)";
-                return;
+                    StatusText.Text = $"Core: {_coreState} (IPC ok)";
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    last = ex;
+                    _ipcReady = false;
+                    _ipc.Disconnect();
+                    await Task.Delay(300 * attempt).ConfigureAwait(true);
+                }
             }
-            catch (Exception ex)
-            {
-                last = ex;
-                _ipcReady = false;
-                try { _ipc.Disconnect(); } catch { /* ignore */ }
-                await Task.Delay(400 * attempt);
-            }
+
+            _coreState = "disconnected";
+            StatusText.Text = last is null
+                ? "Core offline (start netpilot-core.exe)"
+                : $"Core offline: {last.GetType().Name}: {last.Message}";
+            System.Diagnostics.Debug.WriteLine(last);
         }
-
-        _coreState = "disconnected";
-        StatusText.Text = last is null
-            ? "Core offline (start netpilot-core.exe)"
-            : $"Core offline: {last.Message}";
-        System.Diagnostics.Debug.WriteLine(last);
+        finally
+        {
+            _connectBusy = false;
+        }
     }
 
     /// <summary>NP-146: launch netpilot-core.exe next to this GUI when offline.</summary>
@@ -145,13 +156,10 @@ public partial class MainWindow : Window
     {
         if (BodyText is null || StatusText is null) return;
 
-        if (!_ipcReady || !_ipc.IsConnected)
+        if (!_ipcReady)
         {
-            // One reconnect attempt when user navigates while offline.
-            if (!_ipcReady)
-            {
+            if (!_connectBusy)
                 await TryConnectCoreAsync();
-            }
             if (!_ipcReady)
             {
                 BodyText.Text = OfflineText(tag);
@@ -539,15 +547,16 @@ return sb.ToString();
 
     private async void RefreshCore_Click(object sender, RoutedEventArgs e)
     {
-        try
-        {
-            _ipc.Disconnect();
-        }
-        catch { /* ignore */ }
+        StatusText.Text = "Reconnecting…";
         _ipcReady = false;
+        _ipc.Disconnect();
+        await Task.Delay(50);
         await TryConnectCoreAsync();
-        if (NavList.SelectedItem is ListBoxItem { Tag: string tag })
+        if (_ipcReady && NavList.SelectedItem is ListBoxItem { Tag: string tag })
             await ShowPageAsync(tag);
+        else if (!_ipcReady)
+            BodyText.Text = OfflineText(
+                NavList.SelectedItem is ListBoxItem { Tag: string t0 } ? t0 : "home");
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e)

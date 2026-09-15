@@ -36,7 +36,7 @@ members = [
 ]
 
 [workspace.package]
-version = "1.0.0-rc.6"
+version = "1.0.0-rc.7"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/zongai/NetPilot"
