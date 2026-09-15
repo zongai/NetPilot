@@ -2,7 +2,7 @@
 
 Windows advanced network traffic-control client.
 
-**Current product version:** `1.0.0-rc.4` (R1 Release Candidate — Final requires human approval, see R1 NP-264).
+**Current product version:** `1.0.0-rc.5` (R1 Release Candidate — Final requires human approval, see R1 NP-264).
 
 ## Architecture
 
