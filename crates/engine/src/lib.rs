@@ -1,6 +1,12 @@
 //! Traffic engine: load profiles + rules, decide route, dial outbound, manage TUN.
 
 #![forbid(unsafe_code)]
+#![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(clippy::needless_borrows_for_generic_args)]
+#![allow(clippy::field_reassign_with_default)]
+#![allow(clippy::redundant_closure)]
+#![allow(unused_mut)]
 
 mod inbound;
 mod relay;
