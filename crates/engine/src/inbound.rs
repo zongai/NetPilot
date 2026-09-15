@@ -567,7 +567,7 @@ fn handle_http_client(
         let _ = remote.flush();
     }
 
-    relay_bidirectional(client, remote)
+    pipe_copy(client, remote)
 }
 
 fn parse_host_port(s: &str, default_port: u16) -> Result<(String, u16), String> {

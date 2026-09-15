@@ -10,7 +10,7 @@ use std::time::Duration;
 use netpilot_dns::{DnsRoutePolicy, FakeIpAllocator};
 use netpilot_netstack::{FourTuple, NetStack, StackEvent, StackEventKind};
 use netpilot_os_route::{configure_interface_address, InterfaceAddress, RoutePlan};
-use netpilot_outbound::{DialReport, DialRequest, OutboundError};
+use netpilot_outbound::{dial_outbound, DialReport, DialRequest, OutboundError, OutboundStream};
 use netpilot_proxy::ProxyProfile;
 use netpilot_routing::{parse_rules, RouteRequest, RoutingEngine, RuleIndex};
 use netpilot_transport_reality::{Fingerprint, RealityConfig, RealitySession};
