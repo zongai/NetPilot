@@ -22,15 +22,15 @@ mod timeout;
 pub use auth::{privilege_for_operation, AuthDecision, LocalAuthPolicy, PeerIdentity, Privilege};
 pub use client::{ClientState, NamedPipeClient, PipeClientConfig};
 pub use dispatcher::CommandDispatcher;
-pub use handshake::{client_hello, server_handshake, HandshakeError, HandshakeResult};
-pub use security::{authorize, redact_payload_for_log, requires_privileged};
 pub use error_map::{
     code_for_kind, ensure_error_status, error_response, map_pipe_error, map_route_error,
 };
 pub use events::{EventError, EventStream};
+pub use handshake::{client_hello, server_handshake, HandshakeError, HandshakeResult};
 pub use health::{handle_health_check, register_health_handlers, HealthStatus};
 pub use negotiate::{negotiate, negotiate_response, NegotiateError, VersionOffer};
 pub use router::{echo_handler, RequestRouter, RouteError, RouteOutcome};
+pub use security::{authorize, redact_payload_for_log, requires_privileged};
 pub use server::{
     NamedPipeServer, PipeConnection, PipeError, PipeServerConfig, ServerState, DEFAULT_PIPE_NAME,
 };

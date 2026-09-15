@@ -84,7 +84,10 @@ mod tests {
     #[test]
     fn from_root_layout() {
         let p = RuntimePaths::from_root(PathBuf::from("/tmp/np-test-root"));
-        assert_eq!(p.config_file(), PathBuf::from("/tmp/np-test-root/config/config.json"));
+        assert_eq!(
+            p.config_file(),
+            PathBuf::from("/tmp/np-test-root/config/config.json")
+        );
         assert!(p.instance_lock().ends_with("core.instance.lock"));
     }
 

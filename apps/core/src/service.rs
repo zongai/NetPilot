@@ -986,7 +986,9 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     let cm_list = conn_mgr.clone();
     let log_store_list = Arc::clone(&log_store);
     router.register("logs.list", move |req| {
-        let store = log_store_list.lock().map_err(|e| RouteError::Internal(e.to_string()))?;
+        let store = log_store_list
+            .lock()
+            .map_err(|e| RouteError::Internal(e.to_string()))?;
         let items: Vec<serde_json::Value> = store
             .list()
             .iter()

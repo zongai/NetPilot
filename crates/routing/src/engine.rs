@@ -1,8 +1,6 @@
 //! Routing engine entry (NP-198) — re-export façade.
 
-pub use netpilot_rules::{
-    RouteRequest, RoutingEngine, RuleIndex,
-};
+pub use netpilot_rules::{RouteRequest, RoutingEngine, RuleIndex};
 
 /// Convenience: build engine from raw rule text.
 pub fn engine_from_text(text: &str) -> Result<RoutingEngine, netpilot_rules::ParseError> {

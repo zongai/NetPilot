@@ -51,7 +51,12 @@ pub struct CoreHealth {
 }
 
 impl CoreHealth {
-    pub fn new(state: RuntimeState, started_at: Instant, ipc_bound: bool, message: impl Into<String>) -> Self {
+    pub fn new(
+        state: RuntimeState,
+        started_at: Instant,
+        ipc_bound: bool,
+        message: impl Into<String>,
+    ) -> Self {
         Self {
             level: HealthLevel::from_runtime(state),
             state,

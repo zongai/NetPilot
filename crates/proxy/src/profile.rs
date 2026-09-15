@@ -3,4 +3,6 @@
 
 #![allow(unused_imports)]
 
-pub use crate::{GroupSelect, ProtocolKind, ProxyGroup, ProxyLifecycle, ProxyProfile, TransportKind};
+pub use crate::{
+    GroupSelect, ProtocolKind, ProxyGroup, ProxyLifecycle, ProxyProfile, TransportKind,
+};

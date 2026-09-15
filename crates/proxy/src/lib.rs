@@ -3,10 +3,10 @@
 #![forbid(unsafe_code)]
 
 mod endpoint;
-mod profile;
 mod groups;
 mod health;
 mod lifecycle;
+mod profile;
 mod registry;
 mod runtime;
 mod secrets;

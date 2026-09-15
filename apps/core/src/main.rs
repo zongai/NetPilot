@@ -24,9 +24,9 @@ use service::run_idle_service;
 #[cfg(windows)]
 use service::run_pipe_service;
 use service::ServiceControl;
-use std::time::Instant;
 #[cfg(not(windows))]
 use std::time::Duration;
+use std::time::Instant;
 
 fn feature_smoke() {
     eprintln!("netpilot-core {}", env!("CARGO_PKG_VERSION"));

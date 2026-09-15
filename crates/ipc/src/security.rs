@@ -1,6 +1,8 @@
 //! IPC security boundary (NP-165).
 
-use crate::auth::{AuthDecision, LocalAuthPolicy, PeerIdentity, Privilege, privilege_for_operation};
+use crate::auth::{
+    privilege_for_operation, AuthDecision, LocalAuthPolicy, PeerIdentity, Privilege,
+};
 
 pub fn requires_privileged(operation: &str) -> bool {
     matches!(privilege_for_operation(operation), Privilege::Privileged)
@@ -43,8 +45,15 @@ mod tests {
 
     #[test]
     fn privileged_ops() {
-        assert!(requires_privileged("tunnel.start") || privilege_for_operation("tunnel.start") == Privilege::Privileged || true);
-        assert!(!matches!(privilege_for_operation("ping"), Privilege::Privileged));
+        assert!(
+            requires_privileged("tunnel.start")
+                || privilege_for_operation("tunnel.start") == Privilege::Privileged
+                || true
+        );
+        assert!(!matches!(
+            privilege_for_operation("ping"),
+            Privilege::Privileged
+        ));
     }
 
     #[test]

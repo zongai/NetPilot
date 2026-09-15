@@ -24,8 +24,7 @@ impl ConnectionRegistry {
         self.next_id = self.next_id.saturating_add(1);
         meta.id = id;
         self.events.push(ConnectionEvent::Opened(meta.clone()));
-        self.live
-            .insert(id, (meta, ConnectionState::Established));
+        self.live.insert(id, (meta, ConnectionState::Established));
         id
     }
 
