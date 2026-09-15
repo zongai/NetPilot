@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/)-inspired, versions align
 
 ---
 
+## [1.0.0-rc.3] — 2026-09-15
+
+### Fixed
+
+- Desktop Named Pipe IPC: serialize requests + match `request_id` (fixes Proxies/Rules/Subscriptions cross-wired payloads)
+
+---
+
 ## [1.0.0-rc.2] — 2026-09-15
 
 **Integration build** after RC.1: real UI↔Core paths + connectivity + TUN pump.
