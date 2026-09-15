@@ -159,7 +159,7 @@ impl StreamCipher {
                 let mut h = Sha1::new();
                 h.update(&self.key);
                 h.update(&self.state);
-                h.update(&(self.pos as u64).to_le_bytes());
+                h.update((self.pos as u64).to_le_bytes());
                 let dig = h.finalize();
                 for (i, b) in dig.iter().enumerate().take(self.state.len()) {
                     self.state[i] ^= b;
@@ -208,7 +208,7 @@ pub fn build_tcp_request(
             plain.extend_from_slice(&head);
             let mut md = Md5::new();
             md.update(&key);
-            md.update(&head);
+            md.update(head);
             let dig = md.finalize();
             plain.extend_from_slice(&dig[..2]);
             plain.extend_from_slice(&(12u16).to_be_bytes());

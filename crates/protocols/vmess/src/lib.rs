@@ -211,15 +211,15 @@ pub fn build_vmess_request_with_session(
     out.extend_from_slice(&enc_body);
 
     // Data session keys: SHA256 of req key/iv pairs as in VMess
-    let mut dk = Sha256::digest(req_key);
-    let mut di = Sha256::digest(req_iv);
+    let mut dk = <Sha256 as Digest>::digest(req_key);
+    let mut di = <Sha256 as Digest>::digest(req_iv);
     let mut data_key = [0u8; 16];
     let mut data_iv = [0u8; 16];
     data_key.copy_from_slice(&dk[..16]);
     data_iv.copy_from_slice(&di[..16]);
     // response keys: swap via second hash
-    dk = Sha256::digest(data_key);
-    di = Sha256::digest(data_iv);
+    dk = <Sha256 as Digest>::digest(data_key);
+    di = <Sha256 as Digest>::digest(data_iv);
     let mut response_key = [0u8; 16];
     let mut response_iv = [0u8; 16];
     response_key.copy_from_slice(&dk[..16]);
