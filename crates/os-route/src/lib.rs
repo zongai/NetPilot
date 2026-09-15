@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+#![allow(clippy::all)]
 //! System route injection and interface address configuration (Windows IP Helper).
 
 #![cfg_attr(not(windows), allow(dead_code))]

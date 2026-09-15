@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+#![allow(clippy::all)]
 //! Dynamic loader + full Wintun FFI surface (`wintun.dll`).
 //!
 //! Does not link against Wintun at build time. On non-Windows targets every

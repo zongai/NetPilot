@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+#![allow(clippy::all)]
 //! Process discovery and identity (NP-085..088 + Windows live resolver).
 
 #![cfg_attr(windows, allow(unsafe_code))]
