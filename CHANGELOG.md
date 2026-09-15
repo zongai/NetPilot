@@ -7,6 +7,28 @@ Format: [Keep a Changelog](https://keepachangelog.com/)-inspired, versions align
 
 ---
 
+## [1.0.0-rc.1] — 2026-09-15
+
+**R1 Release Candidate** (not Final — NP-264 requires human approval).
+
+### Added
+
+- V5 functional surfaces NP-145…240 (IPC handshake/dispatcher, proxy registry/runtime, DNS runtime, connection/log store, Desktop rules/settings wiring)
+- R1 release engineering NP-241…264: unified version `1.0.0-rc.1`, release profile, package/install/first-run/secret-scan scripts, security & UAC docs, acceptance plans
+- Full package workflow `release-full` (Core + WPF zip)
+
+### Changed
+
+- Workspace product version → `1.0.0-rc.1`
+- README rewritten for V5/R1 layout and IPC surface
+
+### Notes
+
+- SHA-256 recorded after artifacts exist on Windows CI
+- TUN/Wintun elevated path remains human-reviewed
+
+---
+
 ## [0.1.6] — 2026-09-15
 
 **Full package:** Core + WPF GUI (`NetPilot-win-x64.zip`) via `release-full`.
