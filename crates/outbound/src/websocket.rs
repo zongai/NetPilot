@@ -16,10 +16,18 @@ pub struct WsUpgrade {
 }
 
 /// Connect TCP(+TLS) and complete HTTP/1.1 WebSocket upgrade. Returns stream past handshake.
-pub fn connect_websocket(server: &str, port: u16, up: &WsUpgrade) -> Result<OutboundStream, OutboundError> {
+pub fn connect_websocket(
+    server: &str,
+    port: u16,
+    up: &WsUpgrade,
+) -> Result<OutboundStream, OutboundError> {
     let tcp = connect_server(server, port, up.timeout)?;
     let mut stream: OutboundStream = if up.use_tls {
-        let sni = up.sni.as_deref().filter(|s| !s.is_empty()).unwrap_or(server);
+        let sni = up
+            .sni
+            .as_deref()
+            .filter(|s| !s.is_empty())
+            .unwrap_or(server);
         let tls = wrap_tls(tcp, sni, &[], false)?;
         OutboundStream::Tls(Box::new(tls))
     } else {
@@ -58,7 +66,9 @@ pub fn connect_websocket(server: &str, port: u16, up: &WsUpgrade) -> Result<Outb
     let text = String::from_utf8_lossy(&buf);
     if !text.contains("101") {
         let line = text.lines().next().unwrap_or("");
-        return Err(OutboundError::Handshake(format!("ws upgrade failed: {line}")));
+        return Err(OutboundError::Handshake(format!(
+            "ws upgrade failed: {line}"
+        )));
     }
     Ok(stream)
 }

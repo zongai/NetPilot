@@ -65,11 +65,7 @@ pub fn dial_vless(
         let tls = wrap_tls(tcp, sni, &alpn, false)?;
         OutboundStream::Tls(Box::new(tls))
     } else {
-        OutboundStream::Plain(connect_server(
-            &profile.server,
-            profile.port,
-            req.timeout,
-        )?)
+        OutboundStream::Plain(connect_server(&profile.server, profile.port, req.timeout)?)
     };
 
     let mut buf = Vec::with_capacity(64);

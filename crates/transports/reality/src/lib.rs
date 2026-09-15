@@ -126,29 +126,23 @@ pub fn cipher_suites(fp: Fingerprint) -> &'static [u16] {
 pub fn extension_order(fp: Fingerprint) -> &'static [u16] {
     match fp {
         Fingerprint::Chrome | Fingerprint::Edge => &[
-            0,    // server_name
-            23,   // extended_master_secret
-            35,   // session_ticket
-            13,   // signature_algorithms
-            43,   // supported_versions
-            45,   // psk_key_exchange_modes
-            51,   // key_share
-            10,   // supported_groups
-            16,   // alpn
-            18,   // signed_certificate_timestamp
-            27,   // compress_certificate
-            17513,// application_settings
-            21,   // padding
+            0,     // server_name
+            23,    // extended_master_secret
+            35,    // session_ticket
+            13,    // signature_algorithms
+            43,    // supported_versions
+            45,    // psk_key_exchange_modes
+            51,    // key_share
+            10,    // supported_groups
+            16,    // alpn
+            18,    // signed_certificate_timestamp
+            27,    // compress_certificate
+            17513, // application_settings
+            21,    // padding
         ],
-        Fingerprint::Firefox => &[
-            0, 23, 35, 13, 43, 45, 51, 10, 16, 18, 28, 21,
-        ],
-        Fingerprint::Safari | Fingerprint::IOS => &[
-            0, 23, 35, 13, 43, 45, 51, 10, 16, 18, 21,
-        ],
-        Fingerprint::Android => &[
-            0, 23, 35, 13, 43, 45, 51, 10, 16, 18, 27, 21,
-        ],
+        Fingerprint::Firefox => &[0, 23, 35, 13, 43, 45, 51, 10, 16, 18, 28, 21],
+        Fingerprint::Safari | Fingerprint::IOS => &[0, 23, 35, 13, 43, 45, 51, 10, 16, 18, 21],
+        Fingerprint::Android => &[0, 23, 35, 13, 43, 45, 51, 10, 16, 18, 27, 21],
         Fingerprint::Random => extension_order(Fingerprint::Chrome),
     }
 }
@@ -210,8 +204,7 @@ pub fn derive_reality_auth(cfg: &RealityConfig) -> Result<RealityAuthKeys, Strin
     let mut info = Vec::from(&b"AUTH"[..]);
     info.extend_from_slice(cfg.server_name.as_bytes());
     info.extend_from_slice(&short_id);
-    hk.expand(&info, &mut auth_key)
-        .map_err(|e| e.to_string())?;
+    hk.expand(&info, &mut auth_key).map_err(|e| e.to_string())?;
 
     Ok(RealityAuthKeys {
         client_public: *client_public.as_bytes(),
@@ -395,7 +388,9 @@ mod tests {
         let cfg = RealityConfig::new("www.example.com").with_fingerprint(Fingerprint::Chrome);
         let hello = build_client_hello_template(&cfg).unwrap();
         assert!(hello.len() > 50);
-        assert!(hello.windows(11).any(|w| w == b"example.com" || w.starts_with(b"www.")));
+        assert!(hello
+            .windows(11)
+            .any(|w| w == b"example.com" || w.starts_with(b"www.")));
         let dig = fingerprint_digest(&cfg);
         assert_eq!(dig.len(), 16);
     }

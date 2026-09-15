@@ -57,8 +57,7 @@ impl ConnTable {
     pub fn retain_active(&mut self, max_age_secs: u64) {
         let now = Instant::now();
         self.tcp.retain(|_, c| {
-            now.duration_since(c.created).as_secs() < max_age_secs
-                && c.state != TcpState::Closed
+            now.duration_since(c.created).as_secs() < max_age_secs && c.state != TcpState::Closed
         });
     }
 }

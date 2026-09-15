@@ -72,8 +72,8 @@ pub fn parse_uuid(s: &str) -> Result<[u8; 16], String> {
 
 /// KDF: HMAC-SHA256 iterated (simplified VMess KDF).
 fn kdf(key: &[u8], path: &[&[u8]]) -> [u8; 32] {
-    let mut mac =
-        HmacSha256::new_from_slice(key).unwrap_or_else(|_| HmacSha256::new_from_slice(&[0u8; 32]).unwrap());
+    let mut mac = HmacSha256::new_from_slice(key)
+        .unwrap_or_else(|_| HmacSha256::new_from_slice(&[0u8; 32]).unwrap());
     for p in path {
         mac.update(p);
     }
@@ -153,7 +153,7 @@ pub fn build_vmess_request_with_session(
     rng.fill_bytes(&mut ver);
     body.push(ver[0]); // V
     body.push(0x05); // Opt: standard options
-    // P|Sec: padding upper nibble + security
+                     // P|Sec: padding upper nibble + security
     let sec = match cfg.security {
         VmessSecurity::Aes128Gcm => 0x03,
         VmessSecurity::Chacha20Poly1305 => 0x04,
@@ -256,7 +256,11 @@ fn encode_addr(body: &mut Vec<u8>, host: &str) -> Result<(), String> {
 }
 
 /// Encrypt a single payload chunk (length-prefixed AEAD).
-pub fn seal_chunk(keys: &VmessSessionKeys, counter: u16, plaintext: &[u8]) -> Result<Vec<u8>, String> {
+pub fn seal_chunk(
+    keys: &VmessSessionKeys,
+    counter: u16,
+    plaintext: &[u8],
+) -> Result<Vec<u8>, String> {
     match keys.security {
         VmessSecurity::None => {
             let mut out = Vec::with_capacity(2 + plaintext.len());
@@ -270,9 +274,7 @@ pub fn seal_chunk(keys: &VmessSessionKeys, counter: u16, plaintext: &[u8]) -> Re
             nonce[..8].copy_from_slice(&keys.data_iv[..8]);
             nonce[10..12].copy_from_slice(&counter.to_be_bytes());
             let n = Nonce::from(nonce);
-            let ct = aead
-                .encrypt(&n, plaintext)
-                .map_err(|e| e.to_string())?;
+            let ct = aead.encrypt(&n, plaintext).map_err(|e| e.to_string())?;
             let mut out = Vec::with_capacity(2 + ct.len());
             out.extend_from_slice(&(ct.len() as u16).to_be_bytes());
             out.extend_from_slice(&ct);
@@ -294,8 +296,7 @@ pub fn open_chunk(keys: &VmessSessionKeys, counter: u16, frame: &[u8]) -> Result
     match keys.security {
         VmessSecurity::None => Ok(data.to_vec()),
         VmessSecurity::Aes128Gcm | VmessSecurity::Chacha20Poly1305 => {
-            let aead =
-                Aes128Gcm::new_from_slice(&keys.response_key).map_err(|e| e.to_string())?;
+            let aead = Aes128Gcm::new_from_slice(&keys.response_key).map_err(|e| e.to_string())?;
             let mut nonce = [0u8; 12];
             nonce[..8].copy_from_slice(&keys.response_iv[..8]);
             nonce[10..12].copy_from_slice(&counter.to_be_bytes());
@@ -304,7 +305,6 @@ pub fn open_chunk(keys: &VmessSessionKeys, counter: u16, frame: &[u8]) -> Result
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

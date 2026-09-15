@@ -8,16 +8,18 @@ mod relay;
 use std::time::Duration;
 
 use netpilot_dns::{DnsRoutePolicy, FakeIpAllocator};
+use netpilot_netstack::{FourTuple, NetStack, StackEvent, StackEventKind};
+use netpilot_os_route::{configure_interface_address, InterfaceAddress, RoutePlan};
 use netpilot_outbound::{DialReport, DialRequest, OutboundError};
 use netpilot_proxy::ProxyProfile;
 use netpilot_routing::{parse_rules, RouteRequest, RoutingEngine, RuleIndex};
-use netpilot_tun::{TunConfig, TunError, WintunSession, WintunSessionState, WintunTunProvider};
-use netpilot_os_route::{configure_interface_address, InterfaceAddress, RoutePlan};
-use netpilot_netstack::{FourTuple, NetStack, StackEvent, StackEventKind};
 use netpilot_transport_reality::{Fingerprint, RealityConfig, RealitySession};
+use netpilot_tun::{TunConfig, TunError, WintunSession, WintunSessionState, WintunTunProvider};
 use std::net::Ipv4Addr;
 
-pub use inbound::{start_http_inbound, start_socks_inbound, HttpInbound, InboundStats, SocksInbound};
+pub use inbound::{
+    start_http_inbound, start_socks_inbound, HttpInbound, InboundStats, SocksInbound,
+};
 pub use relay::TunRelay;
 
 pub const CRATE_NAME: &str = "netpilot-engine";
@@ -330,7 +332,6 @@ impl TrafficEngine {
         }
     }
 
-
     /// One TUN cycle: receive → netstack → reply to TUN → dial/relay outbound.
     pub fn pump_and_relay_once(&mut self, timeout_ms: u32) -> Result<PumpResult, EngineError> {
         self.tun_relay.stats.pumps = self.tun_relay.stats.pumps.saturating_add(1);
@@ -363,10 +364,8 @@ impl TrafficEngine {
                 match ev.kind {
                     StackEventKind::TcpSyn => {
                         if let Some(tuple) = ev.tuple.clone() {
-                            let outbound = ev
-                                .outbound_hint
-                                .clone()
-                                .unwrap_or_else(|| "DIRECT".into());
+                            let outbound =
+                                ev.outbound_hint.clone().unwrap_or_else(|| "DIRECT".into());
                             let profiles = self.profiles.clone();
                             // Dial destination = remote IP:port from tuple
                             let host = netpilot_netstack::addr_str(tuple.dst);
@@ -473,12 +472,10 @@ impl TrafficEngine {
         self.tun_relay.flow_count()
     }
 
-
     pub fn pump_tun_once(&mut self, timeout_ms: u32) -> Result<Option<usize>, EngineError> {
         let r = self.pump_and_relay_once(timeout_ms)?;
         Ok(r.packet_in)
     }
-
 
     pub fn allocate_fake_ip(&mut self, host: &str) -> String {
         self.fake_ip
@@ -499,7 +496,6 @@ impl TrafficEngine {
     pub fn inbound_port(&self) -> Option<u16> {
         self.inbound.as_ref().map(|i| i.port())
     }
-
 
     pub fn set_physical_gateway(&mut self, gw: Option<Ipv4Addr>, luid: u64) {
         self.physical_gateway = gw;
@@ -543,7 +539,9 @@ impl TrafficEngine {
             let dst = netpilot_netstack::addr_str(hdr.dst);
             self.decide(None, Some(&dst), None).outbound
         } else {
-            self.selected_outbound.clone().unwrap_or_else(|| "DIRECT".into())
+            self.selected_outbound
+                .clone()
+                .unwrap_or_else(|| "DIRECT".into())
         };
         self.netstack.handle_inbound(packet, &outbound)
     }
@@ -557,9 +555,12 @@ impl TrafficEngine {
         )
     }
 
-    pub fn reality_probe(&self, server_name: &str, fingerprint: &str) -> Result<(String, usize), EngineError> {
-        let cfg = RealityConfig::new(server_name)
-            .with_fingerprint(Fingerprint::parse(fingerprint));
+    pub fn reality_probe(
+        &self,
+        server_name: &str,
+        fingerprint: &str,
+    ) -> Result<(String, usize), EngineError> {
+        let cfg = RealityConfig::new(server_name).with_fingerprint(Fingerprint::parse(fingerprint));
         let session = RealitySession::open(cfg).map_err(|e| EngineError::State(e))?;
         Ok((session.digest, session.client_hello.len()))
     }
@@ -645,9 +646,7 @@ mod tests {
         // dial to 1.1.1.1:80 may fail in CI; event still recorded
         eng.stop_tunnel().unwrap();
     }
-
 }
-
 
 /// Minimal IPv4 header peek for TUN packets (no full reassembly).
 #[derive(Debug, Clone)]

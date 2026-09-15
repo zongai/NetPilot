@@ -549,11 +549,7 @@ fn handle_http_client(
     let (outbound_name, profiles, timeout) = {
         let g = engine.lock().map_err(|_| "engine lock".to_string())?;
         let d = g.decide(Some(&host), None, Some(port));
-        (
-            d.outbound,
-            g.profiles().to_vec(),
-            g.dial_timeout(),
-        )
+        (d.outbound, g.profiles().to_vec(), g.dial_timeout())
     };
 
     let mut req = DialRequest::new(&host, port);
@@ -567,9 +563,7 @@ fn handle_http_client(
             .map_err(|e| e.to_string())?;
     } else {
         // Relay original request
-        remote
-            .write_all(&buf)
-            .map_err(|e| e.to_string())?;
+        remote.write_all(&buf).map_err(|e| e.to_string())?;
         let _ = remote.flush();
     }
 

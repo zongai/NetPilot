@@ -10,23 +10,23 @@ mod addr;
 mod http_connect;
 mod shadowsocks;
 mod socks5;
+mod ssr;
 mod tls_stream;
 mod trojan;
 mod vless;
 mod vmess;
 mod websocket;
-mod ssr;
 
 pub use addr::{encode_socks_addr, TargetAddr};
 pub use http_connect::dial_http_connect;
 pub use shadowsocks::dial_shadowsocks;
 pub use socks5::dial_socks5;
+pub use ssr::dial_ssr;
 pub use tls_stream::{wrap_tls, TlsStream};
 pub use trojan::dial_trojan;
 pub use vless::dial_vless;
 pub use vmess::dial_vmess;
 pub use websocket::{connect_websocket, ws_send_binary, WsUpgrade};
-pub use ssr::dial_ssr;
 
 use std::io::{Read, Write};
 use std::net::TcpStream;

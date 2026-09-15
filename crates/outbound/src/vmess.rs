@@ -2,10 +2,10 @@
 
 use std::io::Write;
 
-use netpilot_proxy::{ProxyProfile, TransportKind};
 use netpilot_protocol_vmess::{
     build_vmess_request_with_session, parse_uuid, seal_chunk, VmessConfig, VmessSecurity,
 };
+use netpilot_proxy::{ProxyProfile, TransportKind};
 
 use crate::tls_stream::wrap_tls;
 use crate::websocket::{connect_websocket, ws_send_binary, WsUpgrade};
@@ -74,11 +74,7 @@ pub fn dial_vmess(
             .unwrap_or_default();
         OutboundStream::Tls(Box::new(wrap_tls(tcp, sni, &alpn, false)?))
     } else {
-        OutboundStream::Plain(connect_server(
-            &profile.server,
-            profile.port,
-            req.timeout,
-        )?)
+        OutboundStream::Plain(connect_server(&profile.server, profile.port, req.timeout)?)
     };
 
     let (header, keys) = build_vmess_request_with_session(&cfg, &req.target_host, req.target_port)

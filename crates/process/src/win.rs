@@ -7,8 +7,8 @@ use std::ffi::OsString;
 use std::os::windows::ffi::OsStringExt;
 use std::path::PathBuf;
 
-use crate::identity::ProcessIdentity;
 use crate::discovery::ProcessSnapshot;
+use crate::identity::ProcessIdentity;
 
 type HANDLE = *mut core::ffi::c_void;
 type DWORD = u32;
@@ -78,10 +78,7 @@ pub fn resolve_pid_path(pid: u32) -> Option<ProcessSnapshot> {
         return None;
     };
 
-    Some(ProcessSnapshot {
-        pid,
-        identity,
-    })
+    Some(ProcessSnapshot { pid, identity })
 }
 
 fn query_full_image_name(pid: u32) -> Option<String> {

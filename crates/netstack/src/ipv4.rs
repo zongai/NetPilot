@@ -72,13 +72,7 @@ pub fn checksum(data: &[u8]) -> u16 {
     !(sum as u16)
 }
 
-pub fn build_ipv4(
-    src: [u8; 4],
-    dst: [u8; 4],
-    protocol: u8,
-    payload: &[u8],
-    id: u16,
-) -> Vec<u8> {
+pub fn build_ipv4(src: [u8; 4], dst: [u8; 4], protocol: u8, payload: &[u8], id: u16) -> Vec<u8> {
     let total = 20 + payload.len();
     let mut out = vec![0u8; total];
     out[0] = 0x45;

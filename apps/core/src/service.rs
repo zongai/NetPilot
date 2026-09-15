@@ -1,25 +1,25 @@
 #![allow(dead_code)] // pipe service path is Windows-only; exercised on target
 //! Resident Core service: IPC request loop over named pipe (Windows).
 
+use std::net::ToSocketAddrs;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::net::ToSocketAddrs;
 use std::time::Duration;
 
-use netpilot_core_lib::{CoreRuntime, RuntimeState};
-use netpilot_engine::{start_socks_inbound, TrafficEngine};
-use netpilot_os_proxy::{
-    apply_system_proxy, disable_system_proxy, query_system_proxy, AutoProxyMode, SystemProxyAuto,
-    SystemProxySettings,
-};
-use netpilot_diagnostics::ConnectionManager;
 use netpilot_config::ConfigDocument;
+use netpilot_core_lib::{CoreRuntime, RuntimeState};
+use netpilot_diagnostics::ConnectionManager;
 use netpilot_dns::{DnsQuery, SystemResolver};
+use netpilot_engine::{start_socks_inbound, TrafficEngine};
 use netpilot_ipc::{
     register_health_handlers, ErrorBody, HealthStatus, IpcEnvelope, MessageKind, RequestRouter,
     RouteError, RouteOutcome, DEFAULT_PIPE_NAME,
 };
 use netpilot_os_pipe::{bare_name, NamedPipeListener, PipeSession, PipeTransportError};
+use netpilot_os_proxy::{
+    apply_system_proxy, disable_system_proxy, query_system_proxy, AutoProxyMode, SystemProxyAuto,
+    SystemProxySettings,
+};
 use netpilot_proxy::{ProtocolKind, ProxyProfile};
 use netpilot_subscription::{
     run_subscription_pipeline, FilterRule, RenameRule, SubscriptionFetcher, SubscriptionManager,
@@ -689,10 +689,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     let sys_q = sys_proxy.clone();
     router.register("system_proxy.query", move |req| {
         let q = query_system_proxy().unwrap_or_default();
-        let auto = sys_q
-            .lock()
-            .map(|g| g.is_active())
-            .unwrap_or(false);
+        let auto = sys_q.lock().map(|g| g.is_active()).unwrap_or(false);
         Ok(
             IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
                 serde_json::json!({
@@ -797,7 +794,6 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
         )
     });
 
-
     let engine_routes = engine.clone();
 
     let engine_pump = engine.clone();
@@ -856,7 +852,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
         let h = hex.trim();
         let mut i = 0;
         while i + 1 < h.len() {
-            let b = u8::from_str_radix(&h[i..i+2], 16)
+            let b = u8::from_str_radix(&h[i..i + 2], 16)
                 .map_err(|_| RouteError::InvalidInput("bad hex"))?;
             bytes.push(b);
             i += 2;
@@ -971,19 +967,19 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             .lock()
             .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
         match g.reality_probe(sni, fp) {
-            Ok((digest, hello_len)) => Ok(
-                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
-                    .with_payload(serde_json::json!({
-                        "digest": digest,
-                        "client_hello_len": hello_len,
-                        "fingerprint": fp,
-                        "server_name": sni,
-                    })),
-            ),
+            Ok((digest, hello_len)) => Ok(IpcEnvelope::ok_response(
+                req.request_id.clone(),
+                req.operation.clone(),
+            )
+            .with_payload(serde_json::json!({
+                "digest": digest,
+                "client_hello_len": hello_len,
+                "fingerprint": fp,
+                "server_name": sni,
+            }))),
             Err(e) => err_resp(req, "invalid_argument", e.to_string(), 400),
         }
     });
-
 
     let cm_list = conn_mgr.clone();
     router.register("connections.list", move |req| {

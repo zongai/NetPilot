@@ -83,9 +83,7 @@ impl TunRelay {
             .flows
             .get_mut(tuple)
             .ok_or_else(|| "no flow".to_string())?;
-        flow.stream
-            .write_all(data)
-            .map_err(|e| e.to_string())?;
+        flow.stream.write_all(data).map_err(|e| e.to_string())?;
         let _ = flow.stream.flush();
         self.stats.bytes_up = self.stats.bytes_up.saturating_add(data.len() as u64);
         Ok(data.len())

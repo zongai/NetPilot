@@ -145,9 +145,7 @@ mod win {
         let sub = wide(SUBKEY);
         let mut h: HKEY = ptr::null_mut();
         let sam = if write { KEY_READ_WRITE } else { KEY_READ };
-        let st = unsafe {
-            RegOpenKeyExW(HKEY_CURRENT_USER, sub.as_ptr(), 0, sam, &mut h)
-        };
+        let st = unsafe { RegOpenKeyExW(HKEY_CURRENT_USER, sub.as_ptr(), 0, sam, &mut h) };
         if st != ERROR_SUCCESS {
             return Err(ProxyError::Api(format!("RegOpenKeyExW={st}")));
         }
@@ -157,16 +155,7 @@ mod win {
     fn set_dword(h: HKEY, name: &str, value: u32) -> Result<(), ProxyError> {
         let n = wide(name);
         let bytes = value.to_le_bytes();
-        let st = unsafe {
-            RegSetValueExW(
-                h,
-                n.as_ptr(),
-                0,
-                REG_DWORD,
-                bytes.as_ptr(),
-                4,
-            )
-        };
+        let st = unsafe { RegSetValueExW(h, n.as_ptr(), 0, REG_DWORD, bytes.as_ptr(), 4) };
         if st != ERROR_SUCCESS {
             return Err(ProxyError::Api(format!("RegSetValueEx DWORD {name}={st}")));
         }
@@ -176,9 +165,8 @@ mod win {
     fn set_string(h: HKEY, name: &str, value: &str) -> Result<(), ProxyError> {
         let n = wide(name);
         let data = wide(value);
-        let bytes = unsafe {
-            std::slice::from_raw_parts(data.as_ptr() as *const u8, data.len() * 2)
-        };
+        let bytes =
+            unsafe { std::slice::from_raw_parts(data.as_ptr() as *const u8, data.len() * 2) };
         let st = unsafe {
             RegSetValueExW(
                 h,
@@ -264,8 +252,14 @@ mod win {
 
     fn notify_settings_changed() {
         unsafe {
-            let _ = InternetSetOptionW(ptr::null_mut(), INTERNET_OPTION_SETTINGS_CHANGED, ptr::null_mut(), 0);
-            let _ = InternetSetOptionW(ptr::null_mut(), INTERNET_OPTION_REFRESH, ptr::null_mut(), 0);
+            let _ = InternetSetOptionW(
+                ptr::null_mut(),
+                INTERNET_OPTION_SETTINGS_CHANGED,
+                ptr::null_mut(),
+                0,
+            );
+            let _ =
+                InternetSetOptionW(ptr::null_mut(), INTERNET_OPTION_REFRESH, ptr::null_mut(), 0);
         }
     }
 
@@ -274,7 +268,9 @@ mod win {
         let enabled = query_dword(h, "ProxyEnable")?.unwrap_or(0) != 0;
         let server = query_string(h, "ProxyServer")?.unwrap_or_default();
         let bypass = query_string(h, "ProxyOverride")?.unwrap_or_default();
-        unsafe { RegCloseKey(h); }
+        unsafe {
+            RegCloseKey(h);
+        }
         Ok(SystemProxySettings {
             enabled,
             server,
@@ -305,7 +301,9 @@ mod win {
             };
             set_string(h, "ProxyOverride", bypass)?;
         }
-        unsafe { RegCloseKey(h); }
+        unsafe {
+            RegCloseKey(h);
+        }
         notify_settings_changed();
         Ok(prev)
     }
@@ -319,7 +317,9 @@ mod win {
         if !saved.bypass.is_empty() {
             set_string(h, "ProxyOverride", &saved.bypass)?;
         }
-        unsafe { RegCloseKey(h); }
+        unsafe {
+            RegCloseKey(h);
+        }
         notify_settings_changed();
         Ok(())
     }
@@ -334,7 +334,10 @@ mod win {
 }
 
 #[cfg(windows)]
-pub use win::{apply as apply_system_proxy, disable as disable_system_proxy, query as query_system_proxy, restore as restore_system_proxy};
+pub use win::{
+    apply as apply_system_proxy, disable as disable_system_proxy, query as query_system_proxy,
+    restore as restore_system_proxy,
+};
 
 #[cfg(not(windows))]
 pub fn query_system_proxy() -> Result<SystemProxySettings, ProxyError> {

@@ -2,10 +2,8 @@
 
 use std::io::Write;
 
+use netpilot_protocol_shadowsocksr::{build_tcp_request, SsrConfig, SsrMethod, SsrProtocol};
 use netpilot_proxy::ProxyProfile;
-use netpilot_protocol_shadowsocksr::{
-    build_tcp_request, SsrConfig, SsrMethod, SsrProtocol,
-};
 
 use crate::{connect_server, DialReport, DialRequest, OutboundError, OutboundStream};
 
