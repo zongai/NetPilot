@@ -102,6 +102,10 @@ pub struct PumpResult {
     pub bytes_up: u64,
     pub bytes_down: u64,
     pub event_kind: Option<String>,
+    /// Destination host:port opened this cycle (for Connections UI).
+    pub conn_opened: Option<(String, String)>,
+    /// Destination host:port closed this cycle.
+    pub conn_closed: Option<String>,
 }
 
 /// Central runtime for data-plane control.
@@ -384,7 +388,11 @@ impl TrafficEngine {
                                 port,
                                 self.dial_timeout,
                             ) {
-                                Ok(()) => result.dialed = true,
+                                Ok(()) => {
+                                    result.dialed = true;
+                                    result.conn_opened =
+                                        Some((format!("{host}:{port}"), outbound.clone()));
+                                }
                                 Err(e) => result.dial_error = Some(e),
                             }
                         }
@@ -401,6 +409,8 @@ impl TrafficEngine {
                     }
                     StackEventKind::TcpFin | StackEventKind::TcpRst => {
                         if let Some(tuple) = ev.tuple.as_ref() {
+                            let host = netpilot_netstack::addr_str(tuple.dst);
+                            result.conn_closed = Some(format!("{}:{}", host, tuple.dport));
                             self.tun_relay.close_flow(tuple);
                         }
                     }
@@ -454,7 +464,11 @@ impl TrafficEngine {
                         port,
                         self.dial_timeout,
                     ) {
-                        Ok(()) => result.dialed = true,
+                        Ok(()) => {
+                            result.dialed = true;
+                            result.conn_opened =
+                                Some((format!("{host}:{port}"), outbound.clone()));
+                        }
                         Err(e) => result.dial_error = Some(e),
                     }
                 }

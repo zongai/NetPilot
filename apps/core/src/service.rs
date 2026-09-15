@@ -151,6 +151,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
         ls.push(ConnectionLog::info("core service started"));
     }
     let pump_stop: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+    let pump_thread_started: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
     let sys_proxy: Arc<Mutex<SystemProxyAuto>> = Arc::new(Mutex::new(SystemProxyAuto::new()));
 
     let mgr_list = mgr.clone();
@@ -559,34 +560,123 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     });
 
     let engine_tun_start = engine.clone();
+    let pump_stop_for_start = pump_stop.clone();
+    let pump_thread_for_start = pump_thread_started.clone();
+    let engine_for_pump = engine.clone();
+    let conn_mgr_for_start = conn_mgr.clone();
     router.register("tunnel.start", move |req| {
-        let name = req
-            .payload
-            .as_ref()
+        let payload = req.payload.as_ref();
+        let name = payload
             .and_then(|p| p.get("name"))
             .and_then(|v| v.as_str());
+        let auto_route = payload
+            .and_then(|p| p.get("auto_route"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+        let auto_pump = payload
+            .and_then(|p| p.get("auto_pump"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+        let require_native = payload
+            .and_then(|p| p.get("require_native"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
         let mut g = engine_tun_start
             .lock()
             .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
-        match g.start_tunnel(name) {
-            Ok(st) => Ok(
-                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
-                    .with_payload(serde_json::json!({
-                        "running": st.running,
-                        "native": st.native,
-                        "adapter": st.adapter,
-                        "state": st.state,
-                        "last_error": st.last_error,
-                        "adapter_luid": st.adapter_luid,
-                        "configured_ip": st.configured_ip,
-                    })),
-            ),
-            Err(e) => err_resp(req, "failed_precondition", e.to_string(), 500),
+        let st = match g.start_tunnel(name) {
+            Ok(st) => st,
+            Err(e) => return err_resp(req, "failed_precondition", e.to_string(), 500),
+        };
+        if require_native && !st.native {
+            let msg = st.last_error.clone().unwrap_or_else(|| {
+                "wintun.dll not loaded — place wintun.dll beside netpilot-core.exe".into()
+            });
+            return err_resp(req, "failed_precondition", msg, 503);
         }
+
+        let mut routes_applied = 0u64;
+        let mut route_error: Option<String> = None;
+        if auto_route && st.native && st.adapter_luid != 0 {
+            let gw: std::net::Ipv4Addr = "10.0.0.1".parse().unwrap();
+            match g.inject_routes(gw, st.adapter_luid, None) {
+                Ok(n) => routes_applied = n as u64,
+                Err(e) => route_error = Some(e.to_string()),
+            }
+        }
+
+        if auto_pump {
+            pump_stop_for_start.store(false, Ordering::SeqCst);
+            // Spawn background pump once; registers real Connections from TUN flows.
+            if !pump_thread_for_start.swap(true, Ordering::SeqCst) {
+                let eng = engine_for_pump.clone();
+                let stop = pump_stop_for_start.clone();
+                let cm = conn_mgr_for_start.clone();
+                let started = pump_thread_for_start.clone();
+                let _ = std::thread::Builder::new()
+                    .name("tun-pump".into())
+                    .spawn(move || {
+                        use std::collections::HashMap;
+                        let mut flow_ids: HashMap<String, u64> = HashMap::new();
+                        while !stop.load(Ordering::SeqCst) {
+                            let pump_out = match eng.lock() {
+                                Ok(mut g) => g.pump_and_relay_once(100),
+                                Err(_) => break,
+                            };
+                            if let Ok(r) = pump_out {
+                                if let Ok(mut mgr) = cm.lock() {
+                                    if let Some((dest, outbound)) = r.conn_opened {
+                                        let id = mgr.open(
+                                            dest.clone(),
+                                            "tcp",
+                                            None,
+                                            outbound,
+                                            Some("tun".into()),
+                                        );
+                                        flow_ids.insert(dest, id);
+                                    }
+                                    if let Some(dest) = r.conn_closed {
+                                        if let Some(id) = flow_ids.remove(&dest) {
+                                            mgr.close(id);
+                                        }
+                                    }
+                                }
+                            }
+                            std::thread::sleep(Duration::from_millis(5));
+                        }
+                        started.store(false, Ordering::SeqCst);
+                    });
+            }
+        }
+
+        let st = g.tunnel_status();
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
+                serde_json::json!({
+                    "running": st.running,
+                    "native": st.native,
+                    "adapter": st.adapter,
+                    "state": st.state,
+                    "last_error": st.last_error,
+                    "adapter_luid": st.adapter_luid,
+                    "configured_ip": st.configured_ip,
+                    "packets_in": st.packets_in,
+                    "packets_out": st.packets_out,
+                    "routes_applied": routes_applied,
+                    "route_error": route_error,
+                    "auto_pump": auto_pump,
+                    "TUN": if st.running { "running" } else { "stopped" },
+                    "Native Wintun": st.native,
+                }),
+            ),
+        )
     });
 
     let engine_tun_stop = engine.clone();
+    let pump_stop_on_stop = pump_stop.clone();
     router.register("tunnel.stop", move |req| {
+        pump_stop_on_stop.store(true, Ordering::SeqCst);
         let mut g = engine_tun_stop
             .lock()
             .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
@@ -596,6 +686,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
                     .with_payload(serde_json::json!({
                         "running": st.running,
                         "state": st.state,
+                        "native": st.native,
                     })),
             ),
             Err(e) => err_resp(req, "internal", e.to_string(), 500),
@@ -1147,20 +1238,46 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
 
     let engine_bg = engine.clone();
     let pump_stop_start = pump_stop.clone();
+    let conn_mgr_pump = conn_mgr.clone();
     router.register("tunnel.pump_loop_start", move |req| {
         pump_stop_start.store(false, Ordering::SeqCst);
         let eng = engine_bg.clone();
         let stop = pump_stop_start.clone();
-        std::thread::spawn(move || {
-            while !stop.load(Ordering::SeqCst) {
-                if let Ok(mut g) = eng.lock() {
-                    let _ = g.pump_and_relay_once(100);
-                } else {
-                    break;
+        let conn_mgr = conn_mgr_pump.clone();
+        std::thread::Builder::new()
+            .name("tun-pump".into())
+            .spawn(move || {
+                use std::collections::HashMap;
+                let mut flow_ids: HashMap<String, u64> = HashMap::new();
+                while !stop.load(Ordering::SeqCst) {
+                    let pump_out = {
+                        if let Ok(mut g) = eng.lock() {
+                            g.pump_and_relay_once(100)
+                        } else {
+                            break;
+                        }
+                    };
+                    if let Ok(r) = pump_out {
+                        if let Ok(mut cm) = conn_mgr.lock() {
+                            if let Some((dest, outbound)) = r.conn_opened {
+                                let id = cm.open(dest.clone(), "tcp", None, outbound, None);
+                                flow_ids.insert(dest, id);
+                            }
+                            if let Some(dest) = r.conn_closed {
+                                if let Some(id) = flow_ids.remove(&dest) {
+                                    cm.close(id);
+                                }
+                            }
+                            if r.bytes_up > 0 || r.bytes_down > 0 {
+                                // Attribute to any open flow best-effort: last opened not tracked; skip.
+                                let _ = (r.bytes_up, r.bytes_down);
+                            }
+                        }
+                    }
+                    std::thread::sleep(Duration::from_millis(5));
                 }
-                std::thread::sleep(Duration::from_millis(10));
-            }
-        });
+            })
+            .map_err(|_| RouteError::Internal("failed to spawn tun-pump"))?;
         Ok(
             IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
                 .with_payload(serde_json::json!({ "running": true })),

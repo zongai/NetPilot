@@ -144,17 +144,38 @@ public partial class MainWindow : Window
         sb.AppendLine($"Runtime: {_coreState}");
         try
         {
+            // Start TUN (Wintun when DLL present): session → route → pump → connections.
+            var startPayload = JsonSerializer.SerializeToElement(new
+            {
+                name = "NetPilot",
+                auto_route = true,
+                auto_pump = true,
+                require_native = false
+            });
+            var start = await _ipc.RequestAsync("tunnel.start", startPayload);
+            AppendIpcResult(sb, "tunnel.start", start);
+
             var tun = await _ipc.RequestAsync("tunnel.status");
+            AppendIpcResult(sb, "tunnel.status", tun);
             if (tun.TryGetProperty("payload", out var p))
             {
-                sb.AppendLine($"Tunnel: {(p.TryGetProperty("running", out var r) && r.GetBoolean() ? "running" : "stopped")}");
-                if (p.TryGetProperty("native", out var n))
-                    sb.AppendLine($"Native Wintun: {n.GetBoolean()}");
+                var running = p.TryGetProperty("running", out var r) && r.ValueKind == JsonValueKind.True;
+                var native = p.TryGetProperty("native", out var n) && n.ValueKind == JsonValueKind.True;
+                sb.AppendLine();
+                sb.AppendLine($"TUN: {(running ? "running" : "stopped")}");
+                sb.AppendLine($"Native Wintun: {native}");
                 if (p.TryGetProperty("configured_ip", out var ip) && ip.ValueKind != JsonValueKind.Null)
                     sb.AppendLine($"TUN IP: {ip.GetString()}");
+                if (p.TryGetProperty("last_error", out var le) && le.ValueKind == JsonValueKind.String)
+                    sb.AppendLine($"last_error: {le.GetString()}");
+                if (!native)
+                    sb.AppendLine("Hint: place wintun.dll next to netpilot-core.exe for Native Wintun: true");
             }
         }
-        catch { /* ignore */ }
+        catch (Exception ex)
+        {
+            sb.AppendLine($"tunnel: {ex.Message}");
+        }
         sb.AppendLine();
         sb.AppendLine("Pipe: \\\\.\\pipe\\netpilot-core");
         return sb.ToString();

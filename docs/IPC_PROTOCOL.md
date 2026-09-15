@@ -107,3 +107,26 @@ Success: `{ id, bytes, nodes, node_count, http_mode }` where `http_mode` is `inl
 Success criteria: TCP+protocol dial OK, TLS handshake OK (if required), HTTP status 2xx/3xx.
 
 Payload always includes `ok`, `stages[]`, `http_status`, `error`, `kind: "https_connectivity"`.
+
+## tunnel.start / TUN pipeline
+
+```
+wintun.dll → Wintun session → TUN iface (10.0.0.1/24)
+  → route inject (native + LUID)
+  → pump loop (packet capture)
+  → netstack → Core routing → outbound dial
+  → ConnectionManager (Connections UI)
+```
+
+`tunnel.start` payload:
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `name` | provider default | Adapter name |
+| `auto_route` | true | Inject routes when native+LUID |
+| `auto_pump` | true | Spawn TUN pump thread once |
+| `require_native` | false | Fail if wintun.dll missing |
+
+Success highlights: `running`, `native` (**Native Wintun**), `configured_ip`, `routes_applied`.
+
+Connections appear when pump sees TCP SYN and dials outbound (real traffic or `tunnel.inject`).
