@@ -16,8 +16,8 @@ pub use conn::{ConnTable, FourTuple, TcpConn};
 pub use ipv4::{addr_str, build_ipv4, parse_ipv4, Ipv4Header};
 pub use stack::{NetStack, StackEvent, StackEventKind};
 pub use tcp::{
-    build_tcp, parse_tcp, set_tcp_checksum, TcpHeader, TcpState, FLAG_ACK, FLAG_FIN, FLAG_RST,
-    FLAG_SYN, FLAG_PSH,
+    build_tcp, parse_tcp, set_tcp_checksum, TcpHeader, TcpState, FLAG_ACK, FLAG_FIN, FLAG_PSH,
+    FLAG_RST, FLAG_SYN,
 };
 pub use udp::{build_udp, parse_udp, UdpHeader};
 
