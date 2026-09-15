@@ -5,7 +5,6 @@
 #![allow(dead_code)]
 #![allow(clippy::all)]
 
-
 use std::net::Ipv4Addr;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

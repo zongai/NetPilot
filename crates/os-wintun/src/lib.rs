@@ -8,7 +8,6 @@
 #![allow(dead_code)]
 #![allow(clippy::all)]
 
-
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, PartialEq, Eq)]

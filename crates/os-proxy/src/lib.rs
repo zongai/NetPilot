@@ -5,7 +5,6 @@
 
 #![cfg_attr(not(windows), allow(dead_code))]
 #![cfg_attr(windows, allow(unsafe_code))]
-
 #![allow(dead_code)]
 #![allow(clippy::all)]
 #![allow(clippy::upper_case_acronyms)]
