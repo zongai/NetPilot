@@ -1,5 +1,6 @@
 //! Routing engine entry (NP-198) — re-export façade.
 
+#[allow(unused_imports)]
 pub use netpilot_rules::{RouteRequest, RoutingEngine, RuleIndex};
 
 /// Convenience: build engine from raw rule text.
