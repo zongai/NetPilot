@@ -53,3 +53,34 @@ mod tests {
         assert_eq!(l.message, "[redacted]");
     }
 }
+
+/// Ring buffer of recent log lines (NP-209).
+#[derive(Debug, Default)]
+pub struct LogStore {
+    capacity: usize,
+    entries: Vec<ConnectionLog>,
+}
+
+impl LogStore {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            capacity: capacity.max(1),
+            entries: Vec::new(),
+        }
+    }
+
+    pub fn push(&mut self, entry: ConnectionLog) {
+        if self.entries.len() >= self.capacity {
+            self.entries.remove(0);
+        }
+        self.entries.push(entry);
+    }
+
+    pub fn list(&self) -> &[ConnectionLog] {
+        &self.entries
+    }
+
+    pub fn clear(&mut self) {
+        self.entries.clear();
+    }
+}

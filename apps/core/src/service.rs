@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use netpilot_config::ConfigDocument;
 use netpilot_core_lib::{CoreRuntime, RuntimeState};
-use netpilot_diagnostics::ConnectionManager;
+use netpilot_diagnostics::{ConnectionLog, ConnectionManager, LogStore};
 use netpilot_dns::{DnsQuery, SystemResolver};
 use netpilot_engine::{start_socks_inbound, TrafficEngine};
 use netpilot_ipc::{
@@ -145,6 +145,11 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     let engine: Arc<Mutex<TrafficEngine>> = Arc::new(Mutex::new(TrafficEngine::new()));
     let inbound: Arc<Mutex<Option<netpilot_engine::SocksInbound>>> = Arc::new(Mutex::new(None));
     let conn_mgr: Arc<Mutex<ConnectionManager>> = Arc::new(Mutex::new(ConnectionManager::new()));
+    let log_store: Arc<Mutex<LogStore>> = Arc::new(Mutex::new(LogStore::with_capacity(256)));
+    {
+        let mut ls = log_store.lock().expect("log store");
+        ls.push(ConnectionLog::info("core service started"));
+    }
     let pump_stop: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
     let sys_proxy: Arc<Mutex<SystemProxyAuto>> = Arc::new(Mutex::new(SystemProxyAuto::new()));
 
@@ -979,6 +984,26 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     });
 
     let cm_list = conn_mgr.clone();
+    let log_store_list = Arc::clone(&log_store);
+    router.register("logs.list", move |req| {
+        let store = log_store_list.lock().map_err(|e| RouteError::Internal(e.to_string()))?;
+        let items: Vec<serde_json::Value> = store
+            .list()
+            .iter()
+            .map(|e| {
+                serde_json::json!({
+                    "level": format!("{:?}", e.level).to_ascii_lowercase(),
+                    "connection_id": e.connection_id,
+                    "message": e.message,
+                })
+            })
+            .collect();
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                .with_payload(serde_json::json!({ "items": items })),
+        )
+    });
+
     router.register("connections.list", move |req| {
         let g = cm_list
             .lock()

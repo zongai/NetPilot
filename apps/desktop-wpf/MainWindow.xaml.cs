@@ -119,7 +119,7 @@ public partial class MainWindow : Window
                 "proxies" => await BuildProxiesAsync(),
                 "rules" => "Rules\n\nLoad via Core IPC rules.load.\nUse Diagnostics to test rules.decide.",
                 "connections" => await BuildConnectionsAsync(),
-                "logs" => "Logs\n\nCore structured logs with secret redaction.",
+                "logs" => await BuildLogsAsync(),
                 "diagnostics" => await BuildDiagnosticsAsync(),
                 "subscriptions" => await BuildSubscriptionsAsync(),
                 "settings" => await BuildSettingsAsync(),
