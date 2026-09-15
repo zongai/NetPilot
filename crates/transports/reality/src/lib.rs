@@ -6,7 +6,6 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::needless_borrows_for_generic_args)]
 
-
 pub use netpilot_protocol_common::TransportId;
 pub use netpilot_transport_tls::{RealityTlsOverlay, TlsClientConfig, TlsClientSession};
 

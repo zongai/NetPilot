@@ -8,7 +8,6 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::needless_borrows_for_generic_args)]
 
-
 pub use netpilot_protocol_common::{Endpoint, ProtocolId};
 
 use md5::{Digest, Md5};
