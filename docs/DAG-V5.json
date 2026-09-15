@@ -1,0 +1,868 @@
+{
+  "node_count": 96,
+  "edge_count": 95,
+  "nodes": [
+    {
+      "id": "NP-145",
+      "stage": "F0",
+      "title": "Real Core runtime"
+    },
+    {
+      "id": "NP-146",
+      "stage": "F0",
+      "title": "Desktop Core launcher"
+    },
+    {
+      "id": "NP-147",
+      "stage": "F0",
+      "title": "Core health state"
+    },
+    {
+      "id": "NP-148",
+      "stage": "F0",
+      "title": "Graceful shutdown"
+    },
+    {
+      "id": "NP-149",
+      "stage": "F0",
+      "title": "Desktop startup state"
+    },
+    {
+      "id": "NP-150",
+      "stage": "F0",
+      "title": "Single Core instance"
+    },
+    {
+      "id": "NP-151",
+      "stage": "F0",
+      "title": "Runtime data directories"
+    },
+    {
+      "id": "NP-152",
+      "stage": "F0",
+      "title": "Structured logging"
+    },
+    {
+      "id": "NP-153",
+      "stage": "F0",
+      "title": "Core error surface"
+    },
+    {
+      "id": "NP-154",
+      "stage": "F0",
+      "title": "Build artifact layout"
+    },
+    {
+      "id": "NP-155",
+      "stage": "F0",
+      "title": "Smoke runner"
+    },
+    {
+      "id": "NP-156",
+      "stage": "F0",
+      "title": "Bootstrap E2E"
+    },
+    {
+      "id": "NP-157",
+      "stage": "F1",
+      "title": "IPC server"
+    },
+    {
+      "id": "NP-158",
+      "stage": "F1",
+      "title": "IPC client"
+    },
+    {
+      "id": "NP-159",
+      "stage": "F1",
+      "title": "Protocol envelope"
+    },
+    {
+      "id": "NP-160",
+      "stage": "F1",
+      "title": "Request correlation"
+    },
+    {
+      "id": "NP-161",
+      "stage": "F1",
+      "title": "Timeout and cancellation"
+    },
+    {
+      "id": "NP-162",
+      "stage": "F1",
+      "title": "IPC error taxonomy"
+    },
+    {
+      "id": "NP-163",
+      "stage": "F1",
+      "title": "Handshake"
+    },
+    {
+      "id": "NP-164",
+      "stage": "F1",
+      "title": "Event subscription"
+    },
+    {
+      "id": "NP-165",
+      "stage": "F1",
+      "title": "IPC security boundary"
+    },
+    {
+      "id": "NP-166",
+      "stage": "F1",
+      "title": "Command dispatcher"
+    },
+    {
+      "id": "NP-167",
+      "stage": "F1",
+      "title": "IPC integration tests"
+    },
+    {
+      "id": "NP-168",
+      "stage": "F1",
+      "title": "Desktop IPC service"
+    },
+    {
+      "id": "NP-169",
+      "stage": "F2",
+      "title": "ProxyProfile model"
+    },
+    {
+      "id": "NP-170",
+      "stage": "F2",
+      "title": "Config repository"
+    },
+    {
+      "id": "NP-171",
+      "stage": "F2",
+      "title": "Proxy registry"
+    },
+    {
+      "id": "NP-172",
+      "stage": "F2",
+      "title": "Proxy group model"
+    },
+    {
+      "id": "NP-173",
+      "stage": "F2",
+      "title": "Active proxy runtime"
+    },
+    {
+      "id": "NP-174",
+      "stage": "F2",
+      "title": "SOCKS5 outbound"
+    },
+    {
+      "id": "NP-175",
+      "stage": "F2",
+      "title": "HTTP CONNECT outbound"
+    },
+    {
+      "id": "NP-176",
+      "stage": "F2",
+      "title": "TCP dial policy"
+    },
+    {
+      "id": "NP-177",
+      "stage": "F2",
+      "title": "Proxy health check"
+    },
+    {
+      "id": "NP-178",
+      "stage": "F2",
+      "title": "Proxy IPC commands"
+    },
+    {
+      "id": "NP-179",
+      "stage": "F2",
+      "title": "Proxy runtime integration"
+    },
+    {
+      "id": "NP-180",
+      "stage": "F2",
+      "title": "Proxy E2E"
+    },
+    {
+      "id": "NP-181",
+      "stage": "F3",
+      "title": "Subscription manager"
+    },
+    {
+      "id": "NP-182",
+      "stage": "F3",
+      "title": "HTTP fetcher"
+    },
+    {
+      "id": "NP-183",
+      "stage": "F3",
+      "title": "Conditional GET"
+    },
+    {
+      "id": "NP-184",
+      "stage": "F3",
+      "title": "Persistent cache"
+    },
+    {
+      "id": "NP-185",
+      "stage": "F3",
+      "title": "Base64 decoder"
+    },
+    {
+      "id": "NP-186",
+      "stage": "F3",
+      "title": "URI parser"
+    },
+    {
+      "id": "NP-187",
+      "stage": "F3",
+      "title": "Clash/Mihomo parser"
+    },
+    {
+      "id": "NP-188",
+      "stage": "F3",
+      "title": "Sing-box parser"
+    },
+    {
+      "id": "NP-189",
+      "stage": "F3",
+      "title": "Normalizer/deduper"
+    },
+    {
+      "id": "NP-190",
+      "stage": "F3",
+      "title": "Subscription metadata"
+    },
+    {
+      "id": "NP-191",
+      "stage": "F3",
+      "title": "Subscription IPC"
+    },
+    {
+      "id": "NP-192",
+      "stage": "F3",
+      "title": "Subscription E2E"
+    },
+    {
+      "id": "NP-193",
+      "stage": "F4",
+      "title": "Rule model"
+    },
+    {
+      "id": "NP-194",
+      "stage": "F4",
+      "title": "Rule parser"
+    },
+    {
+      "id": "NP-195",
+      "stage": "F4",
+      "title": "Domain matcher"
+    },
+    {
+      "id": "NP-196",
+      "stage": "F4",
+      "title": "CIDR matcher"
+    },
+    {
+      "id": "NP-197",
+      "stage": "F4",
+      "title": "Process matcher"
+    },
+    {
+      "id": "NP-198",
+      "stage": "F4",
+      "title": "Rule engine"
+    },
+    {
+      "id": "NP-199",
+      "stage": "F4",
+      "title": "Route decision IPC"
+    },
+    {
+      "id": "NP-200",
+      "stage": "F4",
+      "title": "Routing integration"
+    },
+    {
+      "id": "NP-201",
+      "stage": "F4",
+      "title": "Rule explanation"
+    },
+    {
+      "id": "NP-202",
+      "stage": "F4",
+      "title": "Rules UI"
+    },
+    {
+      "id": "NP-203",
+      "stage": "F4",
+      "title": "Rules integration tests"
+    },
+    {
+      "id": "NP-204",
+      "stage": "F4",
+      "title": "Routing E2E"
+    },
+    {
+      "id": "NP-205",
+      "stage": "F5",
+      "title": "Connection model"
+    },
+    {
+      "id": "NP-206",
+      "stage": "F5",
+      "title": "Connection registry"
+    },
+    {
+      "id": "NP-207",
+      "stage": "F5",
+      "title": "Connection events"
+    },
+    {
+      "id": "NP-208",
+      "stage": "F5",
+      "title": "Connection query IPC"
+    },
+    {
+      "id": "NP-209",
+      "stage": "F5",
+      "title": "Log store"
+    },
+    {
+      "id": "NP-210",
+      "stage": "F5",
+      "title": "Log redaction tests"
+    },
+    {
+      "id": "NP-211",
+      "stage": "F5",
+      "title": "Diagnostics commands"
+    },
+    {
+      "id": "NP-212",
+      "stage": "F5",
+      "title": "Diagnostics UI"
+    },
+    {
+      "id": "NP-213",
+      "stage": "F5",
+      "title": "Connections UI"
+    },
+    {
+      "id": "NP-214",
+      "stage": "F5",
+      "title": "Logs UI"
+    },
+    {
+      "id": "NP-215",
+      "stage": "F5",
+      "title": "Inspector UI"
+    },
+    {
+      "id": "NP-216",
+      "stage": "F5",
+      "title": "Diagnostics E2E"
+    },
+    {
+      "id": "NP-217",
+      "stage": "F6",
+      "title": "Navigation state"
+    },
+    {
+      "id": "NP-218",
+      "stage": "F6",
+      "title": "Home dashboard"
+    },
+    {
+      "id": "NP-219",
+      "stage": "F6",
+      "title": "Proxies page"
+    },
+    {
+      "id": "NP-220",
+      "stage": "F6",
+      "title": "Proxy connect UX"
+    },
+    {
+      "id": "NP-221",
+      "stage": "F6",
+      "title": "Subscriptions page"
+    },
+    {
+      "id": "NP-222",
+      "stage": "F6",
+      "title": "Subscription import UX"
+    },
+    {
+      "id": "NP-223",
+      "stage": "F6",
+      "title": "Rules page"
+    },
+    {
+      "id": "NP-224",
+      "stage": "F6",
+      "title": "Connections page"
+    },
+    {
+      "id": "NP-225",
+      "stage": "F6",
+      "title": "Logs page"
+    },
+    {
+      "id": "NP-226",
+      "stage": "F6",
+      "title": "Settings page"
+    },
+    {
+      "id": "NP-227",
+      "stage": "F6",
+      "title": "Global error notifications"
+    },
+    {
+      "id": "NP-228",
+      "stage": "F6",
+      "title": "UI smoke E2E"
+    },
+    {
+      "id": "NP-229",
+      "stage": "F7",
+      "title": "DNS runtime"
+    },
+    {
+      "id": "NP-230",
+      "stage": "F7",
+      "title": "DNS IPC/UI"
+    },
+    {
+      "id": "NP-231",
+      "stage": "F7",
+      "title": "TUN abstraction"
+    },
+    {
+      "id": "NP-232",
+      "stage": "F7",
+      "title": "Windows Wintun adapter"
+    },
+    {
+      "id": "NP-233",
+      "stage": "F7",
+      "title": "TUN routing integration"
+    },
+    {
+      "id": "NP-234",
+      "stage": "F7",
+      "title": "Shadowsocks adapter"
+    },
+    {
+      "id": "NP-235",
+      "stage": "F7",
+      "title": "VMess/VLESS/Trojan adapters"
+    },
+    {
+      "id": "NP-236",
+      "stage": "F7",
+      "title": "REALITY capability"
+    },
+    {
+      "id": "NP-237",
+      "stage": "F7",
+      "title": "Protocol capability matrix"
+    },
+    {
+      "id": "NP-238",
+      "stage": "F7",
+      "title": "Windows E2E gate"
+    },
+    {
+      "id": "NP-239",
+      "stage": "F7",
+      "title": "Installer dependency validation"
+    },
+    {
+      "id": "NP-240",
+      "stage": "F7",
+      "title": "Functional acceptance harness"
+    }
+  ],
+  "edges": [
+    {
+      "from": "NP-145",
+      "to": "NP-146"
+    },
+    {
+      "from": "NP-146",
+      "to": "NP-147"
+    },
+    {
+      "from": "NP-147",
+      "to": "NP-148"
+    },
+    {
+      "from": "NP-148",
+      "to": "NP-149"
+    },
+    {
+      "from": "NP-149",
+      "to": "NP-150"
+    },
+    {
+      "from": "NP-150",
+      "to": "NP-151"
+    },
+    {
+      "from": "NP-151",
+      "to": "NP-152"
+    },
+    {
+      "from": "NP-152",
+      "to": "NP-153"
+    },
+    {
+      "from": "NP-153",
+      "to": "NP-154"
+    },
+    {
+      "from": "NP-154",
+      "to": "NP-155"
+    },
+    {
+      "from": "NP-155",
+      "to": "NP-156"
+    },
+    {
+      "from": "NP-156",
+      "to": "NP-157"
+    },
+    {
+      "from": "NP-157",
+      "to": "NP-158"
+    },
+    {
+      "from": "NP-158",
+      "to": "NP-159"
+    },
+    {
+      "from": "NP-159",
+      "to": "NP-160"
+    },
+    {
+      "from": "NP-160",
+      "to": "NP-161"
+    },
+    {
+      "from": "NP-161",
+      "to": "NP-162"
+    },
+    {
+      "from": "NP-162",
+      "to": "NP-163"
+    },
+    {
+      "from": "NP-163",
+      "to": "NP-164"
+    },
+    {
+      "from": "NP-164",
+      "to": "NP-165"
+    },
+    {
+      "from": "NP-165",
+      "to": "NP-166"
+    },
+    {
+      "from": "NP-166",
+      "to": "NP-167"
+    },
+    {
+      "from": "NP-167",
+      "to": "NP-168"
+    },
+    {
+      "from": "NP-168",
+      "to": "NP-169"
+    },
+    {
+      "from": "NP-169",
+      "to": "NP-170"
+    },
+    {
+      "from": "NP-170",
+      "to": "NP-171"
+    },
+    {
+      "from": "NP-171",
+      "to": "NP-172"
+    },
+    {
+      "from": "NP-172",
+      "to": "NP-173"
+    },
+    {
+      "from": "NP-173",
+      "to": "NP-174"
+    },
+    {
+      "from": "NP-174",
+      "to": "NP-175"
+    },
+    {
+      "from": "NP-175",
+      "to": "NP-176"
+    },
+    {
+      "from": "NP-176",
+      "to": "NP-177"
+    },
+    {
+      "from": "NP-177",
+      "to": "NP-178"
+    },
+    {
+      "from": "NP-178",
+      "to": "NP-179"
+    },
+    {
+      "from": "NP-179",
+      "to": "NP-180"
+    },
+    {
+      "from": "NP-180",
+      "to": "NP-181"
+    },
+    {
+      "from": "NP-181",
+      "to": "NP-182"
+    },
+    {
+      "from": "NP-182",
+      "to": "NP-183"
+    },
+    {
+      "from": "NP-183",
+      "to": "NP-184"
+    },
+    {
+      "from": "NP-184",
+      "to": "NP-185"
+    },
+    {
+      "from": "NP-185",
+      "to": "NP-186"
+    },
+    {
+      "from": "NP-186",
+      "to": "NP-187"
+    },
+    {
+      "from": "NP-187",
+      "to": "NP-188"
+    },
+    {
+      "from": "NP-188",
+      "to": "NP-189"
+    },
+    {
+      "from": "NP-189",
+      "to": "NP-190"
+    },
+    {
+      "from": "NP-190",
+      "to": "NP-191"
+    },
+    {
+      "from": "NP-191",
+      "to": "NP-192"
+    },
+    {
+      "from": "NP-192",
+      "to": "NP-193"
+    },
+    {
+      "from": "NP-193",
+      "to": "NP-194"
+    },
+    {
+      "from": "NP-194",
+      "to": "NP-195"
+    },
+    {
+      "from": "NP-195",
+      "to": "NP-196"
+    },
+    {
+      "from": "NP-196",
+      "to": "NP-197"
+    },
+    {
+      "from": "NP-197",
+      "to": "NP-198"
+    },
+    {
+      "from": "NP-198",
+      "to": "NP-199"
+    },
+    {
+      "from": "NP-199",
+      "to": "NP-200"
+    },
+    {
+      "from": "NP-200",
+      "to": "NP-201"
+    },
+    {
+      "from": "NP-201",
+      "to": "NP-202"
+    },
+    {
+      "from": "NP-202",
+      "to": "NP-203"
+    },
+    {
+      "from": "NP-203",
+      "to": "NP-204"
+    },
+    {
+      "from": "NP-204",
+      "to": "NP-205"
+    },
+    {
+      "from": "NP-205",
+      "to": "NP-206"
+    },
+    {
+      "from": "NP-206",
+      "to": "NP-207"
+    },
+    {
+      "from": "NP-207",
+      "to": "NP-208"
+    },
+    {
+      "from": "NP-208",
+      "to": "NP-209"
+    },
+    {
+      "from": "NP-209",
+      "to": "NP-210"
+    },
+    {
+      "from": "NP-210",
+      "to": "NP-211"
+    },
+    {
+      "from": "NP-211",
+      "to": "NP-212"
+    },
+    {
+      "from": "NP-212",
+      "to": "NP-213"
+    },
+    {
+      "from": "NP-213",
+      "to": "NP-214"
+    },
+    {
+      "from": "NP-214",
+      "to": "NP-215"
+    },
+    {
+      "from": "NP-215",
+      "to": "NP-216"
+    },
+    {
+      "from": "NP-216",
+      "to": "NP-217"
+    },
+    {
+      "from": "NP-217",
+      "to": "NP-218"
+    },
+    {
+      "from": "NP-218",
+      "to": "NP-219"
+    },
+    {
+      "from": "NP-219",
+      "to": "NP-220"
+    },
+    {
+      "from": "NP-220",
+      "to": "NP-221"
+    },
+    {
+      "from": "NP-221",
+      "to": "NP-222"
+    },
+    {
+      "from": "NP-222",
+      "to": "NP-223"
+    },
+    {
+      "from": "NP-223",
+      "to": "NP-224"
+    },
+    {
+      "from": "NP-224",
+      "to": "NP-225"
+    },
+    {
+      "from": "NP-225",
+      "to": "NP-226"
+    },
+    {
+      "from": "NP-226",
+      "to": "NP-227"
+    },
+    {
+      "from": "NP-227",
+      "to": "NP-228"
+    },
+    {
+      "from": "NP-228",
+      "to": "NP-229"
+    },
+    {
+      "from": "NP-229",
+      "to": "NP-230"
+    },
+    {
+      "from": "NP-230",
+      "to": "NP-231"
+    },
+    {
+      "from": "NP-231",
+      "to": "NP-232"
+    },
+    {
+      "from": "NP-232",
+      "to": "NP-233"
+    },
+    {
+      "from": "NP-233",
+      "to": "NP-234"
+    },
+    {
+      "from": "NP-234",
+      "to": "NP-235"
+    },
+    {
+      "from": "NP-235",
+      "to": "NP-236"
+    },
+    {
+      "from": "NP-236",
+      "to": "NP-237"
+    },
+    {
+      "from": "NP-237",
+      "to": "NP-238"
+    },
+    {
+      "from": "NP-238",
+      "to": "NP-239"
+    },
+    {
+      "from": "NP-239",
+      "to": "NP-240"
+    }
+  ]
+}

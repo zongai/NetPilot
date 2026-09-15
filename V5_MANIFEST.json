@@ -1,0 +1,21 @@
+{
+  "name": "NetPilot V5 Functional Implementation Task Pack",
+  "version": "5.0.0",
+  "baseline": [
+    "NetPilot V4",
+    "NetPilot S11 Subscription Add-on"
+  ],
+  "task_range": [
+    "NP-145",
+    "NP-240"
+  ],
+  "task_count": 96,
+  "stage_count": 8,
+  "tasks_per_stage": 12,
+  "verified": true,
+  "dag": {
+    "nodes": 96,
+    "edges": 95
+  },
+  "status": "task_pack_only_not_completed_software"
+}
