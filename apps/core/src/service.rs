@@ -701,7 +701,6 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             ),
         )
     });
-    let sys_set = sys_proxy.clone();
     router.register("system_proxy.set", move |req| {
         let payload = req
             .payload
@@ -727,17 +726,10 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             bypass,
         };
         match apply_system_proxy(&settings) {
-            Ok(saved) => {
-                if let Ok(mut g) = sys_set.lock() {
-                    // mark external apply
-                    let _ = g;
-                    let _ = saved;
-                }
-                Ok(
-                    IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
-                        .with_payload(serde_json::json!({ "ok": true })),
-                )
-            }
+            Ok(_saved) => Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(serde_json::json!({ "ok": true })),
+            )
             Err(e) => err_resp(req, "failed_precondition", e.to_string(), 500),
         }
     });
