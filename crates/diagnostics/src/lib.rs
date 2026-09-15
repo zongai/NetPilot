@@ -14,7 +14,7 @@ pub use connection::{
     ConnectionEvent, ConnectionId, ConnectionManager, ConnectionMeta, ConnectionState,
 };
 pub use inspector::{InspectorApi, InspectorSnapshot};
-pub use logging::{ConnectionLog, LogLevel};
+pub use logging::{ConnectionLog, LogLevel, LogStore};
 pub use probe::{run_probe, ProbeKind, ProbeResult};
 pub use report::{DiagnosticsReport, ReportSection};
 pub use script::{ScriptError, ScriptLimits, ScriptModule, ScriptSandbox};
