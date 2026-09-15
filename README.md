@@ -1,59 +1,62 @@
-# NetPilot V4
+# NetPilot
 
 Windows advanced network traffic-control client.
+
+**Current product version:** `1.0.0-rc.1` (R1 Release Candidate — Final requires human approval, see R1 NP-264).
 
 ## Architecture
 
 ```
-Desktop.exe (WinUI 3)
-        │  Windows Named Pipe / versioned RPC
+Desktop (WPF / WinUI shell)     ← control plane only
+        │  Windows Named Pipe / versioned JSON RPC
         ▼
-Core.exe (Rust)          ← single source of truth
-  ├─ routing & rules
-  ├─ proxy lifecycle
-  ├─ TUN / packet path
-  ├─ DNS (system / DoT / DoH / Fake-IP)
-  ├─ process attribution
-  └─ connection state & diagnostics
+netpilot-core.exe (Rust)       ← runtime authority
+  ├─ subscription & proxy registry
+  ├─ rules / routing / dial policy
+  ├─ outbound (SOCKS5, HTTP CONNECT, SS, VMess, VLESS, Trojan, REALITY surface)
+  ├─ DNS (system / DoH-DoT surfaces / Fake-IP)
+  ├─ TUN / Wintun probe + fail-safe
+  ├─ system proxy IPC
+  ├─ process path matching
+  └─ connections / logs / diagnostics
 ```
 
-Protocol and transport are independent layers.  
-REALITY is a security/transport capability, not a standalone protocol.
-
-Ownership boundaries, crate matrix, and non-goals: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-**Target protocols:** HTTP/HTTPS, SOCKS5, Shadowsocks, Shadowsocks 2022, ShadowsocksR, VMess, VLESS, VLESS+TLS, VLESS+REALITY/Vision, Trojan  
-
-**Target transports:** TCP, UDP, TLS, WebSocket, HTTP/2, gRPC
+Ownership boundaries and non-goals: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Data plane notes: [`docs/DATAPLANE.md`](docs/DATAPLANE.md).
 
 ## Repository layout
 
 | Path | Role |
 |------|------|
 | `apps/core` | Rust Core binary (`netpilot-core`) |
-| `apps/desktop` | WinUI 3 shell (UI only; network stays in Core) |
-| `crates/*` | Core libraries (ipc, config, rules, routing, proxy, dns, tun, process, diagnostics, outbound, engine, …) |
-| `crates/protocols/*` | Protocol adapters (shadowsocks, vmess, vless, trojan, …) |
-| `crates/transports/*` | Transport adapters (tcp, tls, websocket, http2, grpc, reality) |
-| `docs/` | Architecture, IPC, task index, per-task specs (`docs/tasks/NP-*.md`) |
-| `scripts/` | Developer / CI PowerShell helpers |
+| `apps/desktop-wpf` | WPF Desktop shell (IPC client; can launch Core) |
+| `apps/desktop` | WinUI 3 shell (optional) |
+| `crates/*` | Libraries (ipc, config, rules, proxy, dns, tun, subscription, …) |
+| `docs/` | Architecture, IPC, task packs (`docs/tasks/NP-*.md`) |
+| `scripts/` | CI, smoke, R1 package/install/secret-scan helpers |
+| `tests/release/` | R1 acceptance plans and Final gate notes |
+
+## Task packs
+
+| Pack | Range | Status |
+|------|-------|--------|
+| V4 | NP-001 … NP-120 | Complete (S0–S9) |
+| S11 | NP-121 … NP-144 | Subscription add-on |
+| V5 | NP-145 … NP-240 | Functional surfaces (F0–F7) |
+| R1 | NP-241 … NP-264 | Release engineering → **RC**; Final needs human sign-off |
+
+Agent rules: [`AGENTS.md`](AGENTS.md), [`AGENTS_V5.md`](AGENTS_V5.md), [`AGENTS_R1.md`](AGENTS_R1.md).
 
 ## Development
 
-**Pinned toolchain:** Rust **1.98.1** + `rustfmt` + `clippy` (`rust-toolchain.toml`).  
-Policy details: [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md). Windows required for full TUN / desktop smoke.
+**Pinned toolchain:** Rust **1.98.1** + `rustfmt` + `clippy` (`rust-toolchain.toml`).
+Policy: [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md). Windows required for full TUN / desktop smoke.
 
 ```powershell
 rustup show   # expect 1.98.1
-
-# Format, check, test, lint (CI baseline)
 ./scripts/ci.ps1
-
-# Lightweight smoke
 ./scripts/smoke.ps1
 ```
-
-Or manually:
 
 ```powershell
 cargo fmt --all -- --check
@@ -62,95 +65,68 @@ cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-## Task-driven development
+## Core IPC
 
-Work is split into 120 tasks (NP-001 … NP-120) across stages S0–S9.  
-See `docs/TASKS.md`, `docs/INDEX.md`, and `docs/tasks/NP-###.md`.
+Pipe: `\\.\pipe\netpilot-core`
+Protocol: newline-delimited JSON `IpcEnvelope` (versioned).
 
-**Agents (Codex and similar):** follow [`AGENTS.md`](AGENTS.md) and [`docs/AGENT_WORKFLOW.md`](docs/AGENT_WORKFLOW.md).
+| Area | Examples |
+|------|----------|
+| Runtime | `ping`, `health.check`, `runtime.state`, `runtime.shutdown` |
+| Subscription | `subscription.list` / `add` / `update` / `remove` |
+| Proxy | `proxy.list`, `proxy.upsert`, `proxy.select` |
+| Rules | `rules.load`, `rules.decide` |
+| Tunnel | `tunnel.status`, `tun.wintun_probe`, `tunnel.start` (admin) |
+| System proxy | `system_proxy.query` / `set` / `disable` |
+| Observability | `connections.list`, `logs.list`, `netstack.stats` |
 
-Contributors and agents must:
+- Smoke-only process exit: `NETPILOT_SMOKE_ONLY=1` (**must not** set in production).
+- Log level: `NETPILOT_LOG_LEVEL` (`error`|`warn`|`info`|`debug`|`trace`).
+- Data root: `NETPILOT_DATA_DIR` or `%LOCALAPPDATA%\NetPilot\data`.
 
-1. Read README, architecture/IPC docs, toolchain policy, and the **target task** first.
-2. Modify **only** the task’s `allowed_paths`.
-3. Plan before editing; keep IPC/API compatibility; redact secrets.
-4. Run acceptance commands; report honestly if the environment cannot run them.
+Feature `real-http` (Core default) uses `ureq` for subscription fetch.
 
-## Status
+## Desktop
 
-**NP-001 … NP-144 complete** (stages S0–S9 + **S11** subscription).
+1. Prefer `Start-NetPilot.cmd` (starts Core, then WPF).
+2. Or start `netpilot-core.exe`, then `NetPilot.Desktop.Wpf.exe`.
+3. Offline GUI attempts `TryLaunchCore` next to the Desktop binary.
 
-Data plane (post-S11): `netpilot-outbound` (SOCKS5 / HTTP CONNECT / Trojan / VLESS / SS AEAD dialers + rustls), `netpilot-engine` (rules → dial, TUN session), full Wintun FFI in `netpilot-os-wintun`. See [`docs/DATAPLANE.md`](docs/DATAPLANE.md).
-
-| Stage | Scope |
-|-------|--------|
-| S0–S1 | Toolchain, CI, Core runtime, IPC |
-| S2 | Config + proxy model |
-| S3 | Rules / routing engine |
-| S4 | WinUI shell + IPC service abstraction |
-| S5 | TUN abstraction, bypass, mock E2E, Wintun wiring surface |
-| S6 | DNS resolver stack + Fake-IP |
-| S7 | Process identity + RuleSet lifecycle |
-| S8 | Connections, inspector, diagnostics, script boundary |
-| S9 | Protocol/transport adapters + compatibility matrix |
-| S11 | Airport subscription fetch/parse/normalize pipeline |
-
-Changelog: [`CHANGELOG.md`](CHANGELOG.md). Architecture: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-Native Wintun requires `wintun.dll` beside Core + elevation. CI uses logical TUN when DLL is absent. Windows release builds produce `netpilot-core.exe` (see Release).
-
-## Release
-
-### GitHub Actions
+## Release (R1)
 
 | Workflow | Trigger | Output |
 |----------|---------|--------|
-| `ci` | push / PR to `main` | fmt, check, test, clippy (Windows + Ubuntu) |
-| `release` | tag `v*`, `workflow_dispatch`, or push to `main` | `netpilot-core.exe` artifact (Windows `release` profile) |
+| `ci` | push / PR | fmt, check, test, clippy |
+| `release` | tag `v*` / main / dispatch | `netpilot-core.exe` |
+| `release-full` | tag `v*` / dispatch | **Core + WPF** → `NetPilot-win-x64.zip` |
 
-Download artifacts from the Actions run, or create a GitHub Release from a version tag (`v0.1.0`).
-
-### Local release binary
+### Local / lab packaging
 
 ```powershell
 cargo build -p netpilot-core --release
-# target\release\netpilot-core.exe
+dotnet publish apps/desktop-wpf/NetPilot.Desktop.Wpf.csproj -c Release -r win-x64 --self-contained true -o dist/desktop
+pwsh scripts/package-r1.ps1
+pwsh scripts/validate-wintun-r1.ps1
+pwsh scripts/first-run-r1.ps1
 ```
 
-Place a signed `wintun.dll` next to the Core binary when enabling the Windows TUN path (see `docs/TUN.md`).
+Portable install/uninstall (preserves user data by default):
 
+```powershell
+pwsh scripts/install-layout-r1.ps1 -Action Install
+pwsh scripts/install-layout-r1.ps1 -Action Uninstall
+```
 
-## Core IPC (v0.1.3+)
+Place trusted `wintun.dll` beside Core for native TUN (admin / human review). See [`docs/TUN.md`](docs/TUN.md), [`docs/UAC_PERMISSIONS_R1.md`](docs/UAC_PERMISSIONS_R1.md).
 
-`netpilot-core.exe` stays resident and listens on `\\.\pipe\netpilot-core`.
+RC notes: [`RELEASE_NOTES.md`](RELEASE_NOTES.md) · Checklist: [`docs/RELEASE_CHECKLIST_R1.md`](docs/RELEASE_CHECKLIST_R1.md) · Final gate: [`tests/release/final/README.md`](tests/release/final/README.md).
 
-- Protocol: newline-delimited JSON `IpcEnvelope`
-- Ops: `health.check`, `health.ready`, `runtime.state`, `runtime.shutdown`, `ping`
-- Smoke exit: set `NETPILOT_SMOKE_ONLY=1`
-- GUI: `Start-NetPilot.cmd` starts Core then WPF Desktop
+## Security
 
+- Never log passwords, tokens, UUIDs, or sensitive subscription URLs.
+- Secret scan helper: `scripts/secret-scan-r1.ps1`
+- Review: [`docs/SECURITY_REVIEW_R1.md`](docs/SECURITY_REVIEW_R1.md)
 
-## Subscription IPC (v0.1.4+)
+## License
 
-Core exposes:
-
-| Op | Payload |
-|----|---------|
-| `subscription.list` | — |
-| `subscription.add` | `{ "id", "name", "url", "enabled?" }` |
-| `subscription.update` | `{ "id", "timeout_secs?" }` |
-| `subscription.remove` | `{ "id" }` |
-
-Feature `real-http` (default on Core) uses `ureq` for outbound fetches. Library default remains mock for CI.
-
-
-## Rules / Outbound / Wintun IPC (v0.1.6+)
-
-| Op | Payload |
-|----|---------|
-| `rules.load` | `{ "text": "DOMAIN-SUFFIX,google.com,PROXY\nMATCH,DIRECT\n" }` |
-| `rules.decide` | `{ "domain"?: "...", "ip"?: "...", "port"?: 443 }` |
-| `outbound.tcp_probe` | `{ "host", "port", "timeout_ms?" }` |
-| `tun.wintun_probe` | — (loads `wintun.dll` if present beside exe) |
-
-Place official `wintun.dll` next to `netpilot-core.exe` for native probe success.
+See repository license / workspace package metadata (`MIT OR Apache-2.0`).
