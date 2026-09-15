@@ -380,6 +380,68 @@ public partial class MainWindow : Window
                 sb.AppendLine($"Wintun: {p}");
         }
         catch (Exception ex) { sb.AppendLine($"wintun: {ex.Message}"); }
+
+        // Real connectivity: TCP → TLS → HTTPS GET (never treat IPC ping as connectivity).
+        sb.AppendLine();
+        sb.AppendLine("=== HTTPS connectivity (DIRECT) ===");
+        try
+        {
+            var connPayload = JsonSerializer.SerializeToElement(new
+            {
+                id = "DIRECT",
+                host = "example.com",
+                port = 443,
+                tls = true
+            });
+            var conn = await _ipc.RequestAsync("proxy.connectivity", connPayload);
+            AppendIpcResult(sb, "proxy.connectivity DIRECT→example.com:443", conn);
+            if (conn.TryGetProperty("payload", out var cp))
+            {
+                var ok = cp.TryGetProperty("ok", out var ov) && ov.ValueKind == JsonValueKind.True;
+                sb.AppendLine(ok
+                    ? "RESULT: HTTPS path OK (TCP+TLS+HTTP)"
+                    : "RESULT: HTTPS path FAILED (see stages above)");
+            }
+        }
+        catch (Exception ex)
+        {
+            sb.AppendLine($"connectivity: {ex.Message}");
+        }
+
+        // If any proxy node exists, probe via first non-demo failure is expected without live proxy.
+        try
+        {
+            var list = await _ipc.RequestAsync("proxy.list");
+            if (list.TryGetProperty("payload", out var lp)
+                && lp.TryGetProperty("items", out var items)
+                && items.ValueKind == JsonValueKind.Array
+                && items.GetArrayLength() > 0)
+            {
+                var first = items[0];
+                var id = first.TryGetProperty("id", out var idv) ? idv.GetString() : null;
+                if (!string.IsNullOrEmpty(id))
+                {
+                    sb.AppendLine();
+                    sb.AppendLine($"=== HTTPS connectivity via proxy [{id}] ===");
+                    var viaPayload = JsonSerializer.SerializeToElement(new
+                    {
+                        id = id,
+                        host = "example.com",
+                        port = 443,
+                        tls = true
+                    });
+                    var via = await _ipc.RequestAsync("proxy.connectivity", viaPayload);
+                    AppendIpcResult(sb, $"proxy.connectivity {id}→example.com:443", via);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            sb.AppendLine($"proxy connectivity: {ex.Message}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("Note: Settings 'ping: ok' only proves IPC. Use stages above for real path.");
         return sb.ToString();
     }
 
@@ -392,7 +454,8 @@ public partial class MainWindow : Window
         try
         {
             var ping = await _ipc.RequestAsync("ping");
-            sb.AppendLine($"ping: {(ping.TryGetProperty("status", out var s) ? s.GetString() : "?")}");
+            sb.AppendLine($"ping (IPC only): {(ping.TryGetProperty("status", out var s) ? s.GetString() : "?")}");
+            sb.AppendLine("For real proxy path use Diagnostics → proxy.connectivity");
         }
         catch (Exception ex) { sb.AppendLine(ex.Message); }
                 try

@@ -12,6 +12,7 @@
 #![allow(clippy::needless_borrows_for_generic_args)]
 
 mod addr;
+mod connectivity;
 mod http_connect;
 mod shadowsocks;
 mod socks5;
@@ -23,6 +24,7 @@ mod vmess;
 mod websocket;
 
 pub use addr::{encode_socks_addr, TargetAddr};
+pub use connectivity::{probe_http_connectivity, ConnectivityReport, ConnectivityStage};
 pub use http_connect::dial_http_connect;
 pub use shadowsocks::dial_shadowsocks;
 pub use socks5::dial_socks5;

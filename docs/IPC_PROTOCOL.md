@@ -92,3 +92,18 @@ Success payload: `{ "id", "accepted": true, "count": <usize> }`.
 Pipeline: body → detect/decode (plain/base64) → parse (URI/Clash/Sing-box) → normalize `ProxyProfile` → `TrafficEngine.add_profile` → visible in `proxy.list`.
 
 Success: `{ id, bytes, nodes, node_count, http_mode }` where `http_mode` is `inline-body` | `real-http` | `mock`.
+
+## proxy.connectivity (real path test)
+
+**Not** IPC `ping`. Stages: `dial` → `tls` → `http`.
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `id` / `outbound` | DIRECT | Profile id/name or `DIRECT` |
+| `host` | `example.com` | Final destination |
+| `port` | `443` | |
+| `tls` | port==443 | Force TLS wrap after dial |
+
+Success criteria: TCP+protocol dial OK, TLS handshake OK (if required), HTTP status 2xx/3xx.
+
+Payload always includes `ok`, `stages[]`, `http_status`, `error`, `kind: "https_connectivity"`.

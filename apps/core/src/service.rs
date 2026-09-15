@@ -410,6 +410,61 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
         }
     });
 
+    let engine_conn = engine.clone();
+    router.register("proxy.connectivity", move |req| {
+        // Real path: Proxy Node → TCP → protocol → TLS → HTTPS. Not IPC ping.
+        let payload = req.payload.as_ref();
+        let outbound = payload
+            .and_then(|p| p.get("id").or_else(|| p.get("outbound")))
+            .and_then(|v| v.as_str());
+        let host = payload
+            .and_then(|p| p.get("host"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("example.com");
+        let port = payload
+            .and_then(|p| p.get("port"))
+            .and_then(|v| v.as_u64())
+            .unwrap_or(443) as u16;
+        let force_tls = payload
+            .and_then(|p| p.get("tls"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(port == 443);
+        let g = engine_conn
+            .lock()
+            .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
+        let report = g.probe_connectivity(outbound, host, port, force_tls);
+        let stages: Vec<serde_json::Value> = report
+            .stages
+            .iter()
+            .map(|s| {
+                serde_json::json!({
+                    "name": s.name,
+                    "ok": s.ok,
+                    "detail": s.detail,
+                    "elapsed_ms": s.elapsed_ms,
+                })
+            })
+            .collect();
+        let body = serde_json::json!({
+            "ok": report.ok,
+            "target": report.target,
+            "via": report.via,
+            "stages": stages,
+            "http_status": report.http_status,
+            "peer": report.peer,
+            "elapsed_ms": report.elapsed_ms,
+            "error": report.error,
+            "kind": "https_connectivity",
+        });
+        if report.ok {
+            Ok(IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(body))
+        } else {
+            // Structured failure still returns status ok with ok:false so UI can show stages;
+            // use error envelope only for malformed requests.
+            Ok(IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(body))
+        }
+    });
+
     let engine_prof = engine.clone();
     router.register("proxy.upsert", move |req| {
         // Canonical: { id, server, port, name?, protocol?, password?, uuid?, ... }
