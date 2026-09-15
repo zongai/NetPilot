@@ -33,7 +33,7 @@ fn feature_smoke() {
     eprintln!("features: runtime,proxy,rules,dns,tun,process,diagnostics,subscription,tls,ipc");
     eprintln!("wintun: {:?}", WintunFeasibility::evaluate().status);
     eprintln!(
-        "ipc pipe: \\.\pipe\{}",
+        "ipc pipe: \\\\.\\pipe\\{}",
         bare_name(netpilot_ipc::DEFAULT_PIPE_NAME)
     );
 
