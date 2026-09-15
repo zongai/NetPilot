@@ -988,7 +988,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     router.register("logs.list", move |req| {
         let store = log_store_list
             .lock()
-            .map_err(|e| RouteError::Internal(e.to_string()))?;
+            .map_err(|_| RouteError::Internal("log store lock poisoned"))?;
         let items: Vec<serde_json::Value> = store
             .list()
             .iter()
