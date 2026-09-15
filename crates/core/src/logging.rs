@@ -1,4 +1,5 @@
 //! Structured logging helpers (NP-152).
+#![allow(clippy::manual_pattern_char_comparison)]
 //!
 //! Levels + redaction-aware formatting. Never log passwords, tokens, or raw URLs with secrets.
 
@@ -54,6 +55,7 @@ pub fn max_level() -> LogLevel {
 }
 
 /// Redact query/userinfo from URLs and obvious token patterns.
+#[allow(clippy::manual_pattern_char_comparison)]
 pub fn redact_secrets(input: &str) -> String {
     let mut out = input.to_string();
     // user:pass@host → user:***@host
