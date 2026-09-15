@@ -99,7 +99,7 @@ pub fn evp_bytes_to_key(password: &[u8], key_len: usize, iv_len: usize) -> (Vec<
     let mut last = Vec::new();
     while key.len() < key_len || iv.len() < iv_len {
         let mut md = Md5::new();
-        md.update(&last);
+        md.update(last.as_slice());
         md.update(password);
         last = md.finalize().to_vec();
         let need_key = key_len.saturating_sub(key.len());
