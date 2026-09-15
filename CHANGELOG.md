@@ -7,6 +7,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/)-inspired, versions align
 
 ---
 
+## [0.1.6] — 2026-09-15
+
+**Full package:** Core + WPF GUI (`NetPilot-win-x64.zip`) via `release-full`.
+
+### Added since 0.1.5
+
+- System proxy auto-switch + IPC (`system_proxy.*`); SOCKS start with `system_proxy: true`
+- VMess AEAD / SSR stream+auth / REALITY X25519+fingerprint ClientHello (compatibility-oriented)
+- SOCKS5 UDP ASSOCIATE relay; Windows live process path/PID resolver
+- TUN↔outbound relay, route injection, netstack, full outbound surface
+- CI green on fmt/check/test/clippy; release exe pipeline
+
+### Notes
+
+- Protocol wire formats are subsets; REALITY is auth+fingerprint not full XTLS-REALITY product stack
+- UDP to remote proxy (SS/VMess UDP) still staged
+
+---
+
 ## [0.1.0] — 2026-09-14
 
 **GitHub Release:** https://github.com/zongai/NetPilot/releases/tag/v0.1.0  

@@ -144,7 +144,7 @@ Core exposes:
 Feature `real-http` (default on Core) uses `ureq` for outbound fetches. Library default remains mock for CI.
 
 
-## Rules / Outbound / Wintun IPC (v0.1.5+)
+## Rules / Outbound / Wintun IPC (v0.1.6+)
 
 | Op | Payload |
 |----|---------|
