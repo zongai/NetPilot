@@ -1,0 +1,22 @@
+name: Cleanup failed workflow runs
+
+on:
+  #schedule:
+  #  - cron: '0 0 * * 0'   # 每天凌晨执行一次，可自行调整
+  workflow_dispatch:        # 支持手动触发
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write        # 删除运行记录需要这个权限
+    steps:
+      - name: Delete failed workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          retain_days: 0            # 0 表示不按天数保留，全部按状态筛选删除
+          keep_minimum_runs: 0      # 不额外保留最小数量
+          delete_workflow_pattern: '' # 留空表示所有 workflow，也可以填具体文件名
+          delete_run_by_conclusion_pattern: 'failure'
