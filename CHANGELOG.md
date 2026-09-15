@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/)-inspired, versions align
 
 ---
 
+## [1.0.0-rc.4] — 2026-09-15
+
+Formal full package rebuild (Core + WPF Desktop).
+Includes IPC serialize fix from rc.3.
+
+---
+
 ## [1.0.0-rc.3] — 2026-09-15
 
 ### Fixed
