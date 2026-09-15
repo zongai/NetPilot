@@ -52,15 +52,28 @@ mod tests {
         let l = ConnectionLog::info("uuid=abc");
         assert_eq!(l.message, "[redacted]");
     }
+
+    #[test]
+    fn ring_buffer() {
+        let mut s = LogStore::with_capacity(2);
+        s.push(ConnectionLog::info("a"));
+        s.push(ConnectionLog::info("b"));
+        s.push(ConnectionLog::info("c"));
+        assert_eq!(s.list().len(), 2);
+        s.clear();
+        assert!(s.list().is_empty());
+    }
 }
 
 /// Ring buffer of recent log lines (NP-209).
 #[derive(Debug, Default)]
+#[allow(dead_code)]
 pub struct LogStore {
     capacity: usize,
     entries: Vec<ConnectionLog>,
 }
 
+#[allow(dead_code)]
 impl LogStore {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
