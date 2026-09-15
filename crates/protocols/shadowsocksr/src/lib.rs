@@ -142,14 +142,14 @@ impl StreamCipher {
         match self.method {
             SsrMethod::Aes128Cfb | SsrMethod::Aes256Cfb => {
                 let mut md = Md5::new();
-                md.update(&self.key);
-                md.update(&self.state);
+                md.update(self.key.as_slice());
+                md.update(self.state.as_slice());
                 let block = md.finalize().to_vec();
                 self.state = block.clone();
                 if self.method == SsrMethod::Aes256Cfb {
                     let mut md2 = Md5::new();
-                    md2.update(&self.key);
-                    md2.update(&block);
+                    md2.update(self.key.as_slice());
+                    md2.update(block.as_slice());
                     md2.finalize().to_vec()
                 } else {
                     block
@@ -157,8 +157,8 @@ impl StreamCipher {
             }
             SsrMethod::Chacha20Ietf => {
                 let mut h = Sha1::new();
-                h.update(&self.key);
-                h.update(&self.state);
+                h.update(self.key.as_slice());
+                h.update(self.state.as_slice());
                 h.update((self.pos as u64).to_le_bytes());
                 let dig = h.finalize();
                 for (i, b) in dig.iter().enumerate().take(self.state.len()) {
@@ -207,7 +207,7 @@ pub fn build_tcp_request(
             rand::thread_rng().fill_bytes(&mut head);
             plain.extend_from_slice(&head);
             let mut md = Md5::new();
-            md.update(&key);
+            md.update(key.as_slice());
             md.update(head);
             let dig = md.finalize();
             plain.extend_from_slice(&dig[..2]);
