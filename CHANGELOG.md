@@ -7,6 +7,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/)-inspired, versions align
 
 ---
 
+## [1.0.0-rc.2] — 2026-09-15
+
+**Integration build** after RC.1: real UI↔Core paths + connectivity + TUN pump.
+
+### Added
+
+- **NP-INTEGRATION-001**: `rules.decide` canonical payload; UI sends domain/port; InvalidInput taxonomy tests
+- **NP-INTEGRATION-002**: `proxy.upsert` schema + UI add node → `proxy.list`
+- **NP-INTEGRATION-003**: `subscription.update` optional `body` → decode/parse → `ProxyProfile` → engine → Proxies
+- **`proxy.connectivity`**: real dial → TLS → HTTPS GET stages (not IPC ping)
+- **TUN pipeline**: `tunnel.start` auto_route/auto_pump; pump registers **Connections** on TcpSyn
+
+### Changed
+
+- Diagnostics/Home show real Core envelopes; Settings labels `ping` as IPC-only
+- IPC protocol docs for rules/proxy/subscription/connectivity/tunnel
+
+### Notes
+
+- `Native Wintun: true` requires Windows + `wintun.dll` beside Core (admin)
+- Live HTTPS DIRECT path verified in CI-capable network tests
+
+---
+
 ## [1.0.0-rc.1] — 2026-09-15
 
 **R1 Release Candidate** (not Final — NP-264 requires human approval).

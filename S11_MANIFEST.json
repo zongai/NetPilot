@@ -1,0 +1,8 @@
+{
+  "name": "NetPilot V4 S11 Airport Subscription Add-on",
+  "base_tasks": "NP-001..NP-120",
+  "addon_tasks": "NP-121..NP-144",
+  "task_count": 24,
+  "stage": "S11",
+  "verified": true
+}

@@ -286,13 +286,7 @@ mod tests {
 
     #[test]
     fn direct_https_example_com() {
-        let r = probe_http_connectivity(
-            None,
-            "example.com",
-            443,
-            Duration::from_secs(15),
-            true,
-        );
+        let r = probe_http_connectivity(None, "example.com", 443, Duration::from_secs(15), true);
         assert!(r.ok, "expected HTTPS path ok, got {r:?}");
         assert_eq!(r.http_status.unwrap_or(0) / 100, 2);
         assert!(r.stages.iter().any(|s| s.name == "dial" && s.ok));

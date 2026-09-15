@@ -16,8 +16,9 @@ use netpilot_diagnostics::{ConnectionLog, ConnectionManager, LogStore};
 use netpilot_dns::{DnsQuery, SystemResolver};
 use netpilot_engine::{start_socks_inbound, TrafficEngine};
 use netpilot_ipc::{
-    parse_proxy_upsert_payload, parse_rules_decide_payload, register_health_handlers, ErrorBody, HealthStatus, IpcEnvelope,
-    MessageKind, RequestRouter, RouteError, RouteOutcome, DEFAULT_PIPE_NAME,
+    parse_proxy_upsert_payload, parse_rules_decide_payload, register_health_handlers, ErrorBody,
+    HealthStatus, IpcEnvelope, MessageKind, RequestRouter, RouteError, RouteOutcome,
+    DEFAULT_PIPE_NAME,
 };
 use netpilot_os_pipe::{bare_name, NamedPipeListener, PipeSession, PipeTransportError};
 use netpilot_os_proxy::{
@@ -458,11 +459,17 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             "kind": "https_connectivity",
         });
         if report.ok {
-            Ok(IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(body))
+            Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(body),
+            )
         } else {
             // Structured failure still returns status ok with ok:false so UI can show stages;
             // use error envelope only for malformed requests.
-            Ok(IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(body))
+            Ok(
+                IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                    .with_payload(body),
+            )
         }
     });
 
@@ -566,9 +573,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     let conn_mgr_for_start = conn_mgr.clone();
     router.register("tunnel.start", move |req| {
         let payload = req.payload.as_ref();
-        let name = payload
-            .and_then(|p| p.get("name"))
-            .and_then(|v| v.as_str());
+        let name = payload.and_then(|p| p.get("name")).and_then(|v| v.as_str());
         let auto_route = payload
             .and_then(|p| p.get("auto_route"))
             .and_then(|v| v.as_bool())

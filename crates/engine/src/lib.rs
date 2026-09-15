@@ -16,7 +16,10 @@ use std::time::Duration;
 use netpilot_dns::{DnsRoutePolicy, FakeIpAllocator};
 use netpilot_netstack::{FourTuple, NetStack, StackEvent, StackEventKind};
 use netpilot_os_route::{configure_interface_address, InterfaceAddress, RoutePlan};
-use netpilot_outbound::{dial_outbound, probe_http_connectivity, ConnectivityReport, DialReport, DialRequest, OutboundError, OutboundStream};
+use netpilot_outbound::{
+    dial_outbound, probe_http_connectivity, ConnectivityReport, DialReport, DialRequest,
+    OutboundError, OutboundStream,
+};
 use netpilot_proxy::ProxyProfile;
 use netpilot_routing::{parse_rules, RouteRequest, RoutingEngine, RuleIndex};
 use netpilot_transport_reality::{Fingerprint, RealityConfig, RealitySession};
@@ -466,8 +469,7 @@ impl TrafficEngine {
                     ) {
                         Ok(()) => {
                             result.dialed = true;
-                            result.conn_opened =
-                                Some((format!("{host}:{port}"), outbound.clone()));
+                            result.conn_opened = Some((format!("{host}:{port}"), outbound.clone()));
                         }
                         Err(e) => result.dial_error = Some(e),
                     }
@@ -596,10 +598,7 @@ impl TrafficEngine {
         // If an id was requested but not found, return structured failure.
         if let Some(id) = outbound_id {
             let id = id.trim();
-            if !id.is_empty()
-                && !id.eq_ignore_ascii_case("DIRECT")
-                && profile.is_none()
-            {
+            if !id.is_empty() && !id.eq_ignore_ascii_case("DIRECT") && profile.is_none() {
                 return ConnectivityReport {
                     ok: false,
                     target: format!("{host}:{port}"),
