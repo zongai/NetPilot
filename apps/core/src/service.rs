@@ -16,8 +16,8 @@ use netpilot_diagnostics::{ConnectionLog, ConnectionManager, LogStore};
 use netpilot_dns::{DnsQuery, SystemResolver};
 use netpilot_engine::{start_socks_inbound, TrafficEngine};
 use netpilot_ipc::{
-    register_health_handlers, ErrorBody, HealthStatus, IpcEnvelope, MessageKind, RequestRouter,
-    RouteError, RouteOutcome, DEFAULT_PIPE_NAME,
+    parse_rules_decide_payload, register_health_handlers, ErrorBody, HealthStatus, IpcEnvelope,
+    MessageKind, RequestRouter, RouteError, RouteOutcome, DEFAULT_PIPE_NAME,
 };
 use netpilot_os_pipe::{bare_name, NamedPipeListener, PipeSession, PipeTransportError};
 use netpilot_os_proxy::{
@@ -336,26 +336,25 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
 
     let engine_decide = engine.clone();
     router.register("rules.decide", move |req| {
-        let payload = req
-            .payload
-            .as_ref()
-            .ok_or(RouteError::InvalidInput("missing payload"))?;
-        let domain = payload.get("domain").and_then(|v| v.as_str());
-        let ip = payload.get("ip").and_then(|v| v.as_str());
-        let port = payload
-            .get("port")
-            .and_then(|v| v.as_u64())
-            .map(|p| p as u16);
+        // Canonical payload: { "domain"?: string, "ip"?: string, "port"?: u16 }
+        // At least one of domain/ip required. Missing/empty/malformed → InvalidInput (not internal).
+        let parsed = parse_rules_decide_payload(req.payload.as_ref())
+            .map_err(|e| RouteError::InvalidInput(e.as_str()))?;
         let g = engine_decide
             .lock()
             .map_err(|_| RouteError::Internal("engine lock poisoned"))?;
-        let r = g.decide(domain, ip, port);
+        let r = g.decide(parsed.domain.as_deref(), parsed.ip.as_deref(), parsed.port);
         Ok(
             IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
                 serde_json::json!({
                     "outbound": r.outbound,
                     "explanation": r.explanation,
                     "matcher": r.matcher,
+                    "request": {
+                        "domain": parsed.domain,
+                        "ip": parsed.ip,
+                        "port": parsed.port,
+                    }
                 }),
             ),
         )

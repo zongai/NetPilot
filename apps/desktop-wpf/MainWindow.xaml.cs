@@ -195,18 +195,46 @@ public partial class MainWindow : Window
         sb.AppendLine();
         try
         {
-            var decide = await _ipc.RequestAsync("rules.decide");
-            if (decide.TryGetProperty("payload", out var payload))
-                sb.AppendLine($"decide => {payload}");
-            else
-                sb.AppendLine(decide.ToString());
+            // Ensure engine has a minimal rule set so decide is meaningful (real Core IPC).
+            var rulesText = "DOMAIN-SUFFIX,google.com,PROXY" + "\n" + "MATCH,DIRECT" + "\n";
+            var loadPayload = JsonSerializer.SerializeToElement(new { text = rulesText });
+            var load = await _ipc.RequestAsync("rules.load", loadPayload);
+            AppendIpcResult(sb, "rules.load", load);
+
+            // Canonical rules.decide payload: domain and/or ip required; port optional.
+            var decidePayload = JsonSerializer.SerializeToElement(new
+            {
+                domain = "www.google.com",
+                port = 443
+            });
+            var decide = await _ipc.RequestAsync("rules.decide", decidePayload);
+            AppendIpcResult(sb, "rules.decide", decide);
         }
         catch (Exception ex)
         {
-            sb.AppendLine($"rules.decide: {ex.Message}");
-            sb.AppendLine("Load rules via rules.load from Core first.");
+            sb.AppendLine($"IPC error: {ex.Message}");
         }
         return sb.ToString();
+    }
+
+    /// Display real Core envelope (ok payload or structured error) — never hide errors.
+    private static void AppendIpcResult(StringBuilder sb, string op, JsonElement resp)
+    {
+        sb.AppendLine($"--- {op} ---");
+        if (resp.TryGetProperty("status", out var status))
+            sb.AppendLine($"status: {status}");
+        if (resp.TryGetProperty("error", out var err) && err.ValueKind != JsonValueKind.Null)
+        {
+            var kind = err.TryGetProperty("kind", out var k) ? k.GetString() : "?";
+            var msg = err.TryGetProperty("message", out var m) ? m.GetString() : err.ToString();
+            sb.AppendLine($"error.kind: {kind}");
+            sb.AppendLine($"error.message: {msg}");
+            return;
+        }
+        if (resp.TryGetProperty("payload", out var payload))
+            sb.AppendLine($"payload: {payload}");
+        else
+            sb.AppendLine(resp.ToString());
     }
 
     private async Task<string> BuildLogsAsync()

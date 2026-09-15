@@ -15,6 +15,7 @@ mod handshake;
 mod health;
 mod negotiate;
 mod router;
+mod rules_decide;
 mod security;
 mod server;
 mod timeout;
@@ -30,6 +31,7 @@ pub use handshake::{client_hello, server_handshake, HandshakeError, HandshakeRes
 pub use health::{handle_health_check, register_health_handlers, HealthStatus};
 pub use negotiate::{negotiate, negotiate_response, NegotiateError, VersionOffer};
 pub use router::{echo_handler, RequestRouter, RouteError, RouteOutcome};
+pub use rules_decide::{parse_rules_decide_payload, RulesDecideParseError, RulesDecideRequest};
 pub use security::{authorize, redact_payload_for_log, requires_privileged};
 pub use server::{
     NamedPipeServer, PipeConnection, PipeError, PipeServerConfig, ServerState, DEFAULT_PIPE_NAME,

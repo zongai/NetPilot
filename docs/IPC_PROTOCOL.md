@@ -29,3 +29,35 @@ Transport: Windows Named Pipe between Desktop and Core.
 ## Compatibility
 
 Additive changes preferred; version bumps for breaks. No secrets in logged payloads.
+
+## rules.decide (NP-INTEGRATION-001)
+
+**Operation:** `rules.decide`
+
+**Canonical request payload** (object, required):
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `domain` | string | one of domain/ip | Host name for domain rules |
+| `ip` | string | one of domain/ip | Literal IP for CIDR rules |
+| `port` | number (u16) | no | Optional port |
+
+Examples:
+
+```json
+{ "domain": "www.google.com", "port": 443 }
+{ "ip": "10.0.0.1", "port": 80 }
+```
+
+**Errors (`status: error`, kind `invalid_input`, code 400):**
+
+| Condition | `error.message` |
+|-----------|-----------------|
+| no payload field | `missing payload` |
+| payload `{}` | `empty payload` |
+| payload not object / wrong field types | `malformed payload` |
+| neither domain nor ip | `payload.domain or payload.ip required` |
+
+**Success payload:** `outbound`, `explanation`, `matcher`, echo `request`.
+
+Related: `rules.load` requires `{ "text": "<rule lines>" }`.
