@@ -4,6 +4,7 @@
 //! engine can map flows onto outbound dialers without a kernel netstack.
 
 #![forbid(unsafe_code)]
+#![allow(dead_code)]
 
 mod conn;
 mod ipv4;
@@ -16,7 +17,7 @@ pub use ipv4::{addr_str, build_ipv4, parse_ipv4, Ipv4Header};
 pub use stack::{NetStack, StackEvent, StackEventKind};
 pub use tcp::{
     build_tcp, parse_tcp, set_tcp_checksum, TcpHeader, TcpState, FLAG_ACK, FLAG_FIN, FLAG_RST,
-    FLAG_SYN,
+    FLAG_SYN, FLAG_PSH,
 };
 pub use udp::{build_udp, parse_udp, UdpHeader};
 

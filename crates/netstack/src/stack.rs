@@ -240,7 +240,7 @@ impl NetStack {
             key.sport,
             conn.server_seq,
             conn.client_seq,
-            FLAG_ACK | 0x08,
+            FLAG_ACK | FLAG_PSH,
             65535,
             data,
         );
