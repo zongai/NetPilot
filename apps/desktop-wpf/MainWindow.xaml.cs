@@ -239,4 +239,18 @@ public partial class MainWindow : Window
         catch { /* ignore */ }
         await TryConnectCoreAsync();
     }
+
+    private void Exit_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private void About_Click(object sender, RoutedEventArgs e)
+    {
+        MessageBox.Show(
+            "NetPilot Desktop (WPF)\nIPC pipe: netpilot-core\nStart Core first, then use Refresh Core.",
+            "About NetPilot",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
 }
