@@ -72,10 +72,11 @@ pub fn parse_uuid(s: &str) -> Result<[u8; 16], String> {
 
 /// KDF: HMAC-SHA256 iterated (simplified VMess KDF).
 fn kdf(key: &[u8], path: &[&[u8]]) -> [u8; 32] {
-    let mut mac = HmacSha256::new_from_slice(key)
-        .unwrap_or_else(|_| HmacSha256::new_from_slice(&[0u8; 32]).unwrap());
+    let mut mac = <HmacSha256 as Mac>::new_from_slice(key).unwrap_or_else(|_| {
+        <HmacSha256 as Mac>::new_from_slice(&[0u8; 32]).expect("hmac zero key")
+    });
     for p in path {
-        mac.update(p);
+        Mac::update(&mut mac, p);
     }
     let out = mac.finalize().into_bytes();
     let mut r = [0u8; 32];
