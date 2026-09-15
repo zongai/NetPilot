@@ -1,9 +1,11 @@
-//! VMess outbound dialer (TCP/TLS/WebSocket).
+//! VMess outbound dialer with AEAD header + chunk seal on first write path.
 
 use std::io::Write;
 
 use netpilot_proxy::{ProxyProfile, TransportKind};
-use netpilot_protocol_vmess::{build_vmess_request, parse_uuid, VmessConfig};
+use netpilot_protocol_vmess::{
+    build_vmess_request_with_session, parse_uuid, seal_chunk, VmessConfig, VmessSecurity,
+};
 
 use crate::tls_stream::wrap_tls;
 use crate::websocket::{connect_websocket, ws_send_binary, WsUpgrade};
@@ -19,7 +21,14 @@ pub fn dial_vmess(
         .as_deref()
         .ok_or_else(|| OutboundError::Invalid("vmess uuid required".into()))?;
     let uuid = parse_uuid(uuid_str).map_err(OutboundError::Invalid)?;
-    let cfg = VmessConfig::new(&profile.server, profile.port, uuid);
+    let mut cfg = VmessConfig::new(&profile.server, profile.port, uuid);
+    if let Some(ref c) = profile.cipher {
+        cfg.security = match c.to_ascii_lowercase().as_str() {
+            "none" | "zero" => VmessSecurity::None,
+            "chacha20-poly1305" | "chacha20" => VmessSecurity::Chacha20Poly1305,
+            _ => VmessSecurity::Aes128Gcm,
+        };
+    }
 
     let is_ws = matches!(profile.transport, Some(TransportKind::Websocket));
     let use_tls = matches!(
@@ -72,13 +81,18 @@ pub fn dial_vmess(
         )?)
     };
 
-    let header = build_vmess_request(&cfg, &req.target_host, req.target_port)
+    let (header, keys) = build_vmess_request_with_session(&cfg, &req.target_host, req.target_port)
         .map_err(OutboundError::Handshake)?;
+    // empty first data chunk after header (keepalive / open stream)
+    let first = seal_chunk(&keys, 0, &[]).map_err(OutboundError::Handshake)?;
+    let mut payload = header;
+    payload.extend_from_slice(&first);
+
     if is_ws {
-        ws_send_binary(&mut stream, &header)?;
+        ws_send_binary(&mut stream, &payload)?;
     } else {
         stream
-            .write_all(&header)
+            .write_all(&payload)
             .map_err(|e| OutboundError::Handshake(e.to_string()))?;
         stream
             .flush()
@@ -90,6 +104,8 @@ pub fn dial_vmess(
         DialReport {
             protocol: if is_ws {
                 "vmess+ws".into()
+            } else if use_tls {
+                "vmess+tls".into()
             } else {
                 "vmess".into()
             },

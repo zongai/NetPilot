@@ -1,18 +1,13 @@
 [package]
-name = "netpilot-protocol-shadowsocksr"
+name = "netpilot-os-proxy"
 version = "0.1.0"
 edition = "2021"
 license.workspace = true
 repository.workspace = true
+description = "Windows system proxy (Internet Settings + WinHTTP)"
 
 [lib]
 path = "src/lib.rs"
-
-[dependencies]
-netpilot-protocol-common = { path = "../common" }
-md-5 = "0.10"
-sha1 = "0.10"
-rand = "0.8"
 
 [lints]
 workspace = true

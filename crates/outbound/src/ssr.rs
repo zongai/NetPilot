@@ -1,15 +1,14 @@
-//! ShadowsocksR outbound (legacy compatibility subset).
+//! ShadowsocksR outbound using protocol crate stream cipher + auth header.
 
 use std::io::Write;
 
 use netpilot_proxy::ProxyProfile;
-use sha2::{Digest, Sha256};
+use netpilot_protocol_shadowsocksr::{
+    build_tcp_request, SsrConfig, SsrMethod, SsrProtocol,
+};
 
-use crate::addr::{encode_socks_addr, TargetAddr};
 use crate::{connect_server, DialReport, DialRequest, OutboundError, OutboundStream};
 
-/// Minimal SSR-like dial: TCP connect + obfuscated length prefix of socks address.
-/// Full protocol chain (auth/protocol/obfs) is not bit-compatible with every SSR build.
 pub fn dial_ssr(
     profile: &ProxyProfile,
     req: &DialRequest,
@@ -19,19 +18,37 @@ pub fn dial_ssr(
         .password
         .as_deref()
         .ok_or_else(|| OutboundError::Invalid("ssr password required".into()))?;
-    let mut stream = connect_server(&profile.server, profile.port, req.timeout)?;
-    let addr = TargetAddr::from_host_port(&req.target_host, req.target_port);
-    let body = encode_socks_addr(&addr)?;
-    // Simple keyed scramble using SHA256(password) XOR (not production SSR)
-    let key = Sha256::digest(password.as_bytes());
-    let mut framed = Vec::with_capacity(2 + body.len());
-    framed.extend_from_slice(&(body.len() as u16).to_be_bytes());
-    for (i, b) in body.iter().enumerate() {
-        framed.push(b ^ key[i % 32]);
+
+    let mut cfg = SsrConfig::new(&profile.server, profile.port, password);
+    if let Some(ref m) = profile.cipher {
+        cfg.method = SsrMethod::parse(m);
     }
+    // protocol / obfs from tags or flow field when present
+    if let Some(ref flow) = profile.flow {
+        for part in flow.split(';') {
+            let p = part.trim();
+            if let Some(v) = p.strip_prefix("protocol=") {
+                cfg.protocol = SsrProtocol::parse(v);
+            } else if let Some(v) = p.strip_prefix("obfs=") {
+                cfg.obfs = v.to_string();
+            } else if let Some(v) = p.strip_prefix("protocol_param=") {
+                cfg.protocol_param = v.to_string();
+            } else if let Some(v) = p.strip_prefix("obfs_param=") {
+                cfg.obfs_param = v.to_string();
+            }
+        }
+    }
+
+    let mut stream = connect_server(&profile.server, profile.port, req.timeout)?;
+    let (pkt, _cipher) = build_tcp_request(&cfg, &req.target_host, req.target_port, &[])
+        .map_err(OutboundError::Handshake)?;
     stream
-        .write_all(&framed)
+        .write_all(&pkt)
         .map_err(|e| OutboundError::Handshake(e.to_string()))?;
+    stream
+        .flush()
+        .map_err(|e| OutboundError::Handshake(e.to_string()))?;
+
     Ok((
         OutboundStream::Plain(stream),
         DialReport {

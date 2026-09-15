@@ -42,6 +42,10 @@ mod tests {
             host: None,
             flow: None,
             network: None,
+            cipher: None,
+            public_key: None,
+            short_id: None,
+            fingerprint: None,
             tags: vec!["z".into(), " a ".into(), "a".into()],
         });
         doc.proxies.push(ProxyProfile {
@@ -60,6 +64,10 @@ mod tests {
             host: None,
             flow: None,
             network: None,
+            cipher: None,
+            public_key: None,
+            short_id: None,
+            fingerprint: None,
             tags: vec![],
         });
         let n = normalize_document(doc);

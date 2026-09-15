@@ -33,6 +33,7 @@ netpilot-os-wintun = { path = "../../crates/os-wintun" }
 netpilot-outbound = { path = "../../crates/outbound" }
 netpilot-engine = { path = "../../crates/engine" }
 netpilot-config = { path = "../../crates/config" }
+netpilot-os-proxy = { path = "../../crates/os-proxy" }
 serde_json = "1"
 
 [lints]

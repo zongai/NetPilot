@@ -1,23 +1,19 @@
-# Implementation gap status (post gap-fill)
+# Gap status
 
-## Implemented end-to-end (control + dial path)
-- Core resident + Named Pipe IPC
-- Subscription fetch (real-http) → ProxyProfile
-- Rules load/decide
-- Outbound: Direct, SOCKS5, HTTP CONNECT, Trojan, VLESS (±WS), VMess (±WS), SS AEAD, SSR subset
-- TUN: Wintun FFI, IP config, route plan, netstack SYN/relay pump
-- REALITY ClientHello fingerprint templates
-- SOCKS inbound relay
-- Config load JSON/YAML into profiles
-- DNS resolve via OS getaddrinfo
-- Connections list IPC (manager)
-- WPF live lists for proxies/subscriptions/connections
+## This wave
 
-## Known remaining limits (not full production parity)
-- VMess/SSR/REALITY crypto not bit-identical to every upstream client
-- TUN L7 relay depends on continuous `tunnel.pump` / pump_loop
-- Windows IP Helper structs simplified vs windows-sys
-- WinUI pages still sample-oriented; WPF is primary desktop shell
-- No system proxy toggle automation
-- UDP associate / full UDP relay incomplete
-- Process-based routing needs live process resolver on Windows PID path
+| Area | Status |
+|------|--------|
+| System proxy | WinINET registry + auto on SOCKS (`system_proxy: true`) + IPC |
+| VMess AEAD | Header AEAD, session keys, chunk seal |
+| SSR | Stream cipher + auth_aes128_md5 framing |
+| REALITY | X25519 + HKDF auth + SessionID/key_share hello |
+| UDP | SOCKS5 UDP ASSOCIATE + direct relay |
+| Process | Windows live path/PID resolver |
+
+## Limits
+
+- Protocol wire formats are compatibility-oriented subsets
+- REALITY is auth+fingerprint, not full XTLS-REALITY product stack
+- UDP to remote proxy (SS/VMess UDP) still staged
+- Some apps ignore WinINET system proxy

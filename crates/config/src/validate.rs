@@ -87,6 +87,10 @@ mod tests {
             host: None,
             flow: None,
             network: None,
+            cipher: None,
+            public_key: None,
+            short_id: None,
+            fingerprint: None,
             tags: vec![],
         }
     }

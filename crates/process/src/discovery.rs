@@ -1,4 +1,4 @@
-//! Process discovery (NP-085). Windows API deferred; mock table for CI.
+//! Process discovery (NP-085). Mock table for CI; live Windows resolver in `win` module.
 
 use std::collections::HashMap;
 

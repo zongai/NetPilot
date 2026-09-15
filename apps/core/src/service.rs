@@ -8,6 +8,10 @@ use std::time::Duration;
 
 use netpilot_core_lib::{CoreRuntime, RuntimeState};
 use netpilot_engine::{start_socks_inbound, TrafficEngine};
+use netpilot_os_proxy::{
+    apply_system_proxy, disable_system_proxy, query_system_proxy, AutoProxyMode, SystemProxyAuto,
+    SystemProxySettings,
+};
 use netpilot_diagnostics::ConnectionManager;
 use netpilot_config::ConfigDocument;
 use netpilot_dns::{DnsQuery, SystemResolver};
@@ -138,6 +142,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     let inbound: Arc<Mutex<Option<netpilot_engine::SocksInbound>>> = Arc::new(Mutex::new(None));
     let conn_mgr: Arc<Mutex<ConnectionManager>> = Arc::new(Mutex::new(ConnectionManager::new()));
     let pump_stop: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+    let sys_proxy: Arc<Mutex<SystemProxyAuto>> = Arc::new(Mutex::new(SystemProxyAuto::new()));
 
     let mgr_list = mgr.clone();
     router.register("subscription.list", move |req| {
@@ -439,6 +444,10 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             host: None,
             flow: None,
             network: None,
+            cipher: None,
+            public_key: None,
+            short_id: None,
+            fingerprint: None,
             tags: vec![],
         };
         let mut g = engine_prof
@@ -575,6 +584,7 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     });
     let engine_in = engine.clone();
     let inbound_start = inbound.clone();
+    let sys_proxy_start = sys_proxy.clone();
     router.register("inbound.socks_start", move |req| {
         let port = req
             .payload
@@ -582,6 +592,12 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             .and_then(|p| p.get("port"))
             .and_then(|v| v.as_u64())
             .unwrap_or(0) as u16;
+        let auto_system = req
+            .payload
+            .as_ref()
+            .and_then(|p| p.get("system_proxy"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
         let mut slot = inbound_start
             .lock()
             .map_err(|_| RouteError::Internal("inbound lock poisoned"))?;
@@ -598,12 +614,24 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             Ok(ib) => {
                 let bound = ib.port();
                 *slot = Some(ib);
+                let mut sys_applied = false;
+                if auto_system {
+                    if let Ok(mut sp) = sys_proxy_start.lock() {
+                        if sp
+                            .enable_local(AutoProxyMode::Socks, "127.0.0.1", bound)
+                            .is_ok()
+                        {
+                            sys_applied = true;
+                        }
+                    }
+                }
                 Ok(
                     IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
                         .with_payload(serde_json::json!({
                             "port": bound,
                             "listen": format!("127.0.0.1:{bound}"),
                             "already_running": false,
+                            "system_proxy": sys_applied,
                         })),
                 )
             }
@@ -612,12 +640,16 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
     });
 
     let inbound_stop = inbound.clone();
+    let sys_proxy_stop = sys_proxy.clone();
     router.register("inbound.socks_stop", move |req| {
         let mut slot = inbound_stop
             .lock()
             .map_err(|_| RouteError::Internal("inbound lock poisoned"))?;
         if let Some(ib) = slot.take() {
             ib.stop();
+        }
+        if let Ok(mut sp) = sys_proxy_stop.lock() {
+            let _ = sp.disable();
         }
         Ok(
             IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
@@ -651,6 +683,118 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
                     .with_payload(serde_json::json!({ "running": false })),
             ),
         }
+    });
+
+    // --- System proxy ---
+    let sys_q = sys_proxy.clone();
+    router.register("system_proxy.query", move |req| {
+        let q = query_system_proxy().unwrap_or_default();
+        let auto = sys_q
+            .lock()
+            .map(|g| g.is_active())
+            .unwrap_or(false);
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
+                serde_json::json!({
+                    "enabled": q.enabled,
+                    "server": q.server,
+                    "bypass": q.bypass,
+                    "auto_managed": auto,
+                }),
+            ),
+        )
+    });
+    let sys_set = sys_proxy.clone();
+    router.register("system_proxy.set", move |req| {
+        let payload = req
+            .payload
+            .as_ref()
+            .ok_or(RouteError::InvalidInput("missing payload"))?;
+        let enabled = payload
+            .get("enabled")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        let server = payload
+            .get("server")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let bypass = payload
+            .get("bypass")
+            .and_then(|v| v.as_str())
+            .unwrap_or("localhost;127.*;<local>")
+            .to_string();
+        let settings = SystemProxySettings {
+            enabled,
+            server,
+            bypass,
+        };
+        match apply_system_proxy(&settings) {
+            Ok(saved) => {
+                if let Ok(mut g) = sys_set.lock() {
+                    // mark external apply
+                    let _ = g;
+                    let _ = saved;
+                }
+                Ok(
+                    IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                        .with_payload(serde_json::json!({ "ok": true })),
+                )
+            }
+            Err(e) => err_resp(req, "failed_precondition", e.to_string(), 500),
+        }
+    });
+    let sys_dis = sys_proxy.clone();
+    router.register("system_proxy.disable", move |req| {
+        if let Ok(mut g) = sys_dis.lock() {
+            let _ = g.disable();
+        } else {
+            let _ = disable_system_proxy();
+        }
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                .with_payload(serde_json::json!({ "disabled": true })),
+        )
+    });
+
+    // --- Process live resolve ---
+    router.register("process.resolve", move |req| {
+        let pid = req
+            .payload
+            .as_ref()
+            .and_then(|p| p.get("pid"))
+            .and_then(|v| v.as_u64())
+            .ok_or(RouteError::InvalidInput("payload.pid required"))? as u32;
+        match netpilot_process::resolve_pid_live(pid) {
+            Some(snap) => Ok(IpcEnvelope::ok_response(
+                req.request_id.clone(),
+                req.operation.clone(),
+            )
+            .with_payload(serde_json::json!({
+                "pid": snap.pid,
+                "exe_name": snap.identity.exe_name,
+                "exe_path": snap.identity.exe_path,
+                "uid_hash": snap.identity.uid_hash,
+            }))),
+            None => err_resp(req, "not_found", format!("pid {pid} not resolved"), 404),
+        }
+    });
+    router.register("process.list", move |req| {
+        let items: Vec<serde_json::Value> = netpilot_process::list_processes_live()
+            .into_iter()
+            .take(500)
+            .map(|s| {
+                serde_json::json!({
+                    "pid": s.pid,
+                    "exe_name": s.identity.exe_name,
+                    "exe_path": s.identity.exe_path,
+                })
+            })
+            .collect();
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
+                .with_payload(serde_json::json!({ "processes": items, "count": items.len() })),
+        )
     });
 
 

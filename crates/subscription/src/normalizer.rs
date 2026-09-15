@@ -35,6 +35,27 @@ fn normalize_one(n: &ParsedNode, id: &str) -> Option<ProxyProfile> {
             .get("network")
             .or_else(|| n.params.get("type"))
             .cloned(),
+        cipher: n
+            .params
+            .get("cipher")
+            .or_else(|| n.params.get("method"))
+            .or_else(|| n.params.get("security"))
+            .cloned(),
+        public_key: n
+            .params
+            .get("public_key")
+            .or_else(|| n.params.get("pbk"))
+            .cloned(),
+        short_id: n
+            .params
+            .get("short_id")
+            .or_else(|| n.params.get("sid"))
+            .cloned(),
+        fingerprint: n
+            .params
+            .get("fingerprint")
+            .or_else(|| n.params.get("fp"))
+            .cloned(),
         tags: vec![n.source_format.to_string()],
     };
     if let Some(t) = map_transport_params(&n.params) {

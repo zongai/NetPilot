@@ -132,6 +132,18 @@ pub struct ProxyProfile {
     pub flow: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<String>,
+    /// Cipher / security method (ss, ssr, vmess).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cipher: Option<String>,
+    /// REALITY server public key (hex).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub public_key: Option<String>,
+    /// REALITY short id (hex).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub short_id: Option<String>,
+    /// uTLS / REALITY fingerprint name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fingerprint: Option<String>,
     #[serde(default)]
     pub tags: Vec<String>,
 }
@@ -273,6 +285,10 @@ mod tests {
             host: None,
             flow: None,
             network: None,
+            cipher: None,
+            public_key: None,
+            short_id: None,
+            fingerprint: None,
             tags: vec![],
         };
         let s = p.redacted_summary();

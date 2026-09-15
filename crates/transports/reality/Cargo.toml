@@ -13,6 +13,9 @@ netpilot-protocol-common = { path = "../../protocols/common" }
 netpilot-transport-tls = { path = "../tls" }
 sha2 = "0.10"
 rand = "0.8"
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+hkdf = "0.12"
+hex = "0.4"
 
 [lints]
 workspace = true

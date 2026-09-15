@@ -31,6 +31,7 @@ members = [
     "crates/outbound",
     "crates/engine",
     "crates/os-route",
+    "crates/os-proxy",
     "crates/netstack",
 ]
 

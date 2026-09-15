@@ -8,8 +8,10 @@
 pub use netpilot_protocol_common::TransportId;
 pub use netpilot_transport_tls::{RealityTlsOverlay, TlsClientConfig, TlsClientSession};
 
+use hkdf::Hkdf;
 use rand::RngCore;
 use sha2::{Digest, Sha256};
+use x25519_dalek::{PublicKey, StaticSecret};
 
 pub const CRATE_NAME: &str = "netpilot-transport-reality";
 
@@ -151,45 +153,137 @@ pub fn extension_order(fp: Fingerprint) -> &'static [u16] {
     }
 }
 
-/// Build a synthetic TLS 1.3 ClientHello blob matching the fingerprint template.
-/// Not a full wire-ready handshake (missing real key_share secrets) but preserves
-/// extension order / cipher suite list for fingerprint testing and REALITY staging.
+/// Parse server X25519 public key (32-byte hex or raw base-ish hex).
+pub fn parse_x25519_pub(hex_or_b64ish: &str) -> Result<[u8; 32], String> {
+    let s = hex_or_b64ish.trim();
+    let bytes = if s.len() == 64 && s.chars().all(|c| c.is_ascii_hexdigit()) {
+        hex::decode(s).map_err(|e| e.to_string())?
+    } else {
+        // try raw hex without strict length
+        hex::decode(s).map_err(|e| format!("public_key decode: {e}"))?
+    };
+    if bytes.len() != 32 {
+        return Err(format!("public_key must be 32 bytes, got {}", bytes.len()));
+    }
+    let mut out = [0u8; 32];
+    out.copy_from_slice(&bytes);
+    Ok(out)
+}
+
+/// REALITY auth material: X25519 ECDH + HKDF → session auth key embedded in SessionID.
+#[derive(Debug, Clone)]
+pub struct RealityAuthKeys {
+    pub client_public: [u8; 32],
+    pub shared_secret: [u8; 32],
+    pub auth_key: [u8; 16],
+    pub short_id: Vec<u8>,
+}
+
+pub fn derive_reality_auth(cfg: &RealityConfig) -> Result<RealityAuthKeys, String> {
+    let server_pub_bytes = match &cfg.public_key {
+        Some(pk) => parse_x25519_pub(pk)?,
+        None => return Err("reality public_key required for auth handshake".into()),
+    };
+    let mut seed = [0u8; 32];
+    rand::thread_rng().fill_bytes(&mut seed);
+    let secret = StaticSecret::from(seed);
+    let client_public = PublicKey::from(&secret);
+    let server_pub = PublicKey::from(server_pub_bytes);
+    let shared = secret.diffie_hellman(&server_pub);
+    let mut shared_secret = [0u8; 32];
+    shared_secret.copy_from_slice(shared.as_bytes());
+
+    let short_id = match &cfg.short_id {
+        Some(s) => {
+            let t = s.trim();
+            if t.chars().all(|c| c.is_ascii_hexdigit()) && !t.is_empty() {
+                hex::decode(t).unwrap_or_default()
+            } else {
+                t.as_bytes().to_vec()
+            }
+        }
+        None => Vec::new(),
+    };
+
+    let hk = Hkdf::<Sha256>::new(Some(b"REALITY"), &shared_secret);
+    let mut auth_key = [0u8; 16];
+    let mut info = Vec::from(&b"AUTH"[..]);
+    info.extend_from_slice(cfg.server_name.as_bytes());
+    info.extend_from_slice(&short_id);
+    hk.expand(&info, &mut auth_key)
+        .map_err(|e| e.to_string())?;
+
+    Ok(RealityAuthKeys {
+        client_public: *client_public.as_bytes(),
+        shared_secret,
+        auth_key,
+        short_id,
+    })
+}
+
+/// Build ClientHello with SessionID carrying REALITY auth + real X25519 key_share.
 pub fn build_client_hello_template(cfg: &RealityConfig) -> Result<Vec<u8>, String> {
+    build_client_hello_with_auth(cfg, None)
+}
+
+pub fn build_client_hello_with_auth(
+    cfg: &RealityConfig,
+    auth: Option<&RealityAuthKeys>,
+) -> Result<Vec<u8>, String> {
     cfg.validate().map_err(|e| e.to_string())?;
     let fp = cfg.fingerprint;
     let mut random = [0u8; 32];
     rand::thread_rng().fill_bytes(&mut random);
 
-    let mut body = Vec::with_capacity(512);
-    // legacy version TLS 1.2
+    // Session ID: 32 bytes — auth_key || short_id pad || random (REALITY-style embedding)
+    let mut session_id = [0u8; 32];
+    if let Some(a) = auth {
+        session_id[..16].copy_from_slice(&a.auth_key);
+        let sid = &a.short_id;
+        let n = sid.len().min(8);
+        session_id[16..16 + n].copy_from_slice(&sid[..n]);
+        rand::thread_rng().fill_bytes(&mut session_id[24..]);
+    } else {
+        rand::thread_rng().fill_bytes(&mut session_id);
+    }
+
+    // X25519 key_share public
+    let ks_pub = if let Some(a) = auth {
+        a.client_public
+    } else {
+        let mut seed = [0u8; 32];
+        rand::thread_rng().fill_bytes(&mut seed);
+        let secret = StaticSecret::from(seed);
+        *PublicKey::from(&secret).as_bytes()
+    };
+
+    let mut body = Vec::with_capacity(768);
     body.extend_from_slice(&0x0303u16.to_be_bytes());
     body.extend_from_slice(&random);
-    body.push(0); // session id len 0
+    body.push(32); // session id length
+    body.extend_from_slice(&session_id);
 
     let ciphers = cipher_suites(fp);
     body.extend_from_slice(&((ciphers.len() * 2) as u16).to_be_bytes());
     for c in ciphers {
         body.extend_from_slice(&c.to_be_bytes());
     }
-    body.push(1); // compression methods length
-    body.push(0); // null
+    body.push(1);
+    body.push(0);
 
-    // extensions
     let mut exts = Vec::new();
     for &etype in extension_order(fp) {
         let data = match etype {
             0 => {
-                // SNI
                 let host = cfg.server_name.as_bytes();
                 let mut d = Vec::new();
                 d.extend_from_slice(&((host.len() + 3) as u16).to_be_bytes());
-                d.push(0); // host_name
+                d.push(0);
                 d.extend_from_slice(&(host.len() as u16).to_be_bytes());
                 d.extend_from_slice(host);
                 d
             }
             16 => {
-                // ALPN h2, http/1.1
                 let mut d = Vec::new();
                 let list = [b"h2".as_slice(), b"http/1.1".as_slice()];
                 let mut inner = Vec::new();
@@ -201,24 +295,22 @@ pub fn build_client_hello_template(cfg: &RealityConfig) -> Result<Vec<u8>, Strin
                 d.extend_from_slice(&inner);
                 d
             }
-            43 => {
-                // supported_versions TLS1.3, TLS1.2
-                vec![0x02, 0x03, 0x04, 0x03, 0x03]
-            }
-            10 => {
-                // supported_groups x25519, secp256r1
-                vec![0x00, 0x04, 0x00, 0x1d, 0x00, 0x17]
-            }
+            43 => vec![0x02, 0x03, 0x04, 0x03, 0x03],
+            10 => vec![0x00, 0x04, 0x00, 0x1d, 0x00, 0x17],
             13 => {
-                // signature_algorithms
-                vec![
-                    0x00, 0x08, 0x04, 0x03, 0x08, 0x04, 0x04, 0x01, 0x05, 0x01,
-                ]
+                vec![0x00, 0x08, 0x04, 0x03, 0x08, 0x04, 0x04, 0x01, 0x05, 0x01]
             }
-            21 => {
-                // padding — keep small
-                vec![0u8; 8]
+            45 => vec![0x01, 0x01], // psk_key_exchange_modes
+            51 => {
+                // key_share: x25519
+                let mut d = Vec::new();
+                d.extend_from_slice(&0x0024u16.to_be_bytes()); // client shares len 36
+                d.extend_from_slice(&0x001du16.to_be_bytes()); // group x25519
+                d.extend_from_slice(&0x0020u16.to_be_bytes()); // key len 32
+                d.extend_from_slice(&ks_pub);
+                d
             }
+            21 => vec![0u8; 16],
             _ => Vec::new(),
         };
         exts.extend_from_slice(&etype.to_be_bytes());
@@ -228,9 +320,8 @@ pub fn build_client_hello_template(cfg: &RealityConfig) -> Result<Vec<u8>, Strin
     body.extend_from_slice(&(exts.len() as u16).to_be_bytes());
     body.extend_from_slice(&exts);
 
-    // TLS record wrapper: Handshake type ClientHello
     let mut hs = Vec::with_capacity(4 + body.len());
-    hs.push(0x01); // ClientHello
+    hs.push(0x01);
     let len = body.len() as u32;
     hs.push(((len >> 16) & 0xff) as u8);
     hs.push(((len >> 8) & 0xff) as u8);
@@ -238,8 +329,8 @@ pub fn build_client_hello_template(cfg: &RealityConfig) -> Result<Vec<u8>, Strin
     hs.extend_from_slice(&body);
 
     let mut record = Vec::with_capacity(5 + hs.len());
-    record.push(0x16); // handshake
-    record.extend_from_slice(&0x0301u16.to_be_bytes()); // record version TLS1.0 for compatibility
+    record.push(0x16);
+    record.extend_from_slice(&0x0301u16.to_be_bytes());
     record.extend_from_slice(&(hs.len() as u16).to_be_bytes());
     record.extend_from_slice(&hs);
     Ok(record)
@@ -274,16 +365,23 @@ pub struct RealitySession {
     pub config: RealityConfig,
     pub client_hello: Vec<u8>,
     pub digest: String,
+    pub auth: Option<RealityAuthKeys>,
 }
 
 impl RealitySession {
     pub fn open(config: RealityConfig) -> Result<Self, String> {
-        let client_hello = build_client_hello_template(&config)?;
+        let auth = if config.public_key.is_some() {
+            Some(derive_reality_auth(&config)?)
+        } else {
+            None
+        };
+        let client_hello = build_client_hello_with_auth(&config, auth.as_ref())?;
         let digest = fingerprint_digest(&config);
         Ok(Self {
             config,
             client_hello,
             digest,
+            auth,
         })
     }
 }

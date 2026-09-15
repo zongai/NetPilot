@@ -17,7 +17,7 @@ use netpilot_netstack::{FourTuple, NetStack, StackEvent, StackEventKind};
 use netpilot_transport_reality::{Fingerprint, RealityConfig, RealitySession};
 use std::net::Ipv4Addr;
 
-pub use inbound::{start_socks_inbound, InboundStats, SocksInbound};
+pub use inbound::{start_http_inbound, start_socks_inbound, HttpInbound, InboundStats, SocksInbound};
 pub use relay::TunRelay;
 
 pub const CRATE_NAME: &str = "netpilot-engine";
@@ -567,6 +567,10 @@ impl TrafficEngine {
     pub fn stats(&self) -> &EngineStats {
         &self.stats
     }
+
+    pub fn dial_timeout(&self) -> Duration {
+        self.dial_timeout
+    }
 }
 
 #[cfg(test)]
@@ -618,6 +622,10 @@ mod tests {
             host: None,
             flow: None,
             network: None,
+            cipher: None,
+            public_key: None,
+            short_id: None,
+            fingerprint: None,
             tags: vec![],
         });
         eng.select_outbound("p1");
