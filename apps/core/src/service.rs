@@ -1,4 +1,6 @@
-#![allow(dead_code)] // pipe service path is Windows-only; exercised on target
+#![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(clippy::needless_borrows_for_generic_args)] // pipe service path is Windows-only; exercised on target
 //! Resident Core service: IPC request loop over named pipe (Windows).
 
 use std::net::ToSocketAddrs;
