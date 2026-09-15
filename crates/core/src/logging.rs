@@ -73,7 +73,7 @@ pub fn redact_secrets(input: &str) -> String {
             let val_start = i + key.len();
             let rest = &out[val_start..];
             let end = rest
-                .find(|c: char| c == '&' || c == ' ' || c == '"' || c == '\'')
+                .find(|c: char| matches!(c, '&' | ' ' | '"' | '\''))
                 .map(|n| val_start + n)
                 .unwrap_or(out.len());
             if val_start < end {

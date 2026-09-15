@@ -48,7 +48,7 @@ impl ConnectionIdGen {
         Self { next: 1 }
     }
 
-    pub fn next(&mut self) -> ConnectionId {
+    pub fn next_id(&mut self) -> ConnectionId {
         let id = self.next;
         self.next = self.next.saturating_add(1);
         id
@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn gen_monotonic() {
         let mut g = ConnectionIdGen::new();
-        assert_eq!(g.next(), 1);
-        assert_eq!(g.next(), 2);
+        assert_eq!(g.next_id(), 1);
+        assert_eq!(g.next_id(), 2);
     }
 }
