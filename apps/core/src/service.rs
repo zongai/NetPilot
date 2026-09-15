@@ -229,65 +229,79 @@ fn build_router(runtime_state: RuntimeState, control: Arc<ServiceControl>) -> Re
             .and_then(|v| v.as_u64())
             .unwrap_or(30);
         let timeout = Duration::from_secs(timeout_secs.max(1));
+        // Optional inline body: skip HTTP and run decode→parse→normalize→upsert (offline E2E).
+        let inline_body = payload
+            .get("body")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
 
         let mut mgr_guard = mgr_upd
             .lock()
             .map_err(|_| RouteError::Internal("subscription lock poisoned"))?;
-        let mut fetcher_guard = fetcher_upd
-            .lock()
-            .map_err(|_| RouteError::Internal("fetcher lock poisoned"))?;
 
-        match mgr_guard.update_one(id, fetcher_guard.as_mut(), timeout) {
-            Ok(body) => {
-                // Parse into ProxyProfile list for caller convenience.
-                let profile = mgr_guard.get(id).cloned();
-                let nodes = if let Some(p) = profile.as_ref() {
-                    let pipe = run_subscription_pipeline(
-                        p,
-                        &body,
-                        &FilterRule::default(),
-                        &RenameRule::default(),
-                    );
-                    pipe.profiles
-                        .iter()
-                        .map(|n| {
-                            serde_json::json!({
-                                "name": n.name,
-                                "server": n.server,
-                                "port": n.port,
-                                "protocol": format!("{:?}", n.protocol),
-                            })
-                        })
-                        .collect::<Vec<_>>()
-                } else {
-                    Vec::new()
-                };
-                if let Some(p) = mgr_guard.get(id).cloned() {
-                    let pipe = run_subscription_pipeline(
-                        &p,
-                        &body,
-                        &FilterRule::default(),
-                        &RenameRule::default(),
-                    );
-                    if let Ok(mut eng) = engine_sub.lock() {
-                        for n in pipe.profiles {
-                            eng.add_profile(n);
-                        }
-                    }
-                }
-                Ok(
-                    IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone())
-                        .with_payload(serde_json::json!({
-                            "id": id,
-                            "bytes": body.len(),
-                            "nodes": nodes,
-                            "node_count": nodes.len(),
-                            "http_mode": http_mode(),
-                        })),
-                )
+        let body = if let Some(b) = inline_body {
+            // Ensure subscription exists so pipeline has a profile.
+            if mgr_guard.get(id).is_none() {
+                return Err(RouteError::InvalidInput("subscription not found — call subscription.add first"));
             }
-            Err(e) => err_resp(req, "failed_precondition", e.to_string(), 502),
+            mgr_guard.cache.put(id, b.clone(), None);
+            if let Some(p) = mgr_guard.get_mut(id) {
+                p.mark_ready(None, None);
+            }
+            b
+        } else {
+            let mut fetcher_guard = fetcher_upd
+                .lock()
+                .map_err(|_| RouteError::Internal("fetcher lock poisoned"))?;
+            match mgr_guard.update_one(id, fetcher_guard.as_mut(), timeout) {
+                Ok(body) => body,
+                Err(e) => return err_resp(req, "failed_precondition", e.to_string(), 502),
+            }
+        };
+
+        let profile = mgr_guard
+            .get(id)
+            .cloned()
+            .ok_or(RouteError::InvalidInput("subscription not found"))?;
+        let pipe = run_subscription_pipeline(
+            &profile,
+            &body,
+            &FilterRule::default(),
+            &RenameRule::default(),
+        );
+        let node_count = pipe.profiles.len();
+        let nodes: Vec<serde_json::Value> = pipe
+            .profiles
+            .iter()
+            .map(|n| {
+                serde_json::json!({
+                    "id": n.id,
+                    "name": n.name,
+                    "server": n.server,
+                    "port": n.port,
+                    "protocol": n.protocol.as_str(),
+                })
+            })
+            .collect();
+
+        // Unified ProxyProfile → TrafficEngine (same store as proxy.list).
+        if let Ok(mut eng) = engine_sub.lock() {
+            for n in pipe.profiles {
+                eng.add_profile(n);
+            }
         }
+
+        Ok(
+            IpcEnvelope::ok_response(req.request_id.clone(), req.operation.clone()).with_payload(
+                serde_json::json!({
+                    "id": id,
+                    "bytes": body.len(),
+                    "nodes": nodes,
+                    "node_count": node_count,
+                    "http_mode": if payload.get("body").is_some() { "inline-body" } else { http_mode() },
+                }),
+            ),
+        )
     });
 
     let mgr_rm = mgr.clone();

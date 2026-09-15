@@ -78,3 +78,17 @@ Related: `rules.load` requires `{ "text": "<rule lines>" }`.
 Success payload: `{ "id", "accepted": true, "count": <usize> }`.
 
 **Operation:** `proxy.list` — no payload. Returns `{ "items": [...], "selected": ... }` from Core profile store.
+
+## subscription.update (NP-INTEGRATION-003)
+
+**Operation:** `subscription.update`
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `id` | string | yes | Must exist via `subscription.add` |
+| `body` | string | no | If set, skip HTTP; use as subscription body (decode→parse) |
+| `timeout_secs` | number | no | HTTP fetch timeout (default 30) |
+
+Pipeline: body → detect/decode (plain/base64) → parse (URI/Clash/Sing-box) → normalize `ProxyProfile` → `TrafficEngine.add_profile` → visible in `proxy.list`.
+
+Success: `{ id, bytes, nodes, node_count, http_mode }` where `http_mode` is `inline-body` | `real-http` | `mock`.

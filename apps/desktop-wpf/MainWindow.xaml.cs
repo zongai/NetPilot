@@ -304,27 +304,59 @@ public partial class MainWindow : Window
 
     private async Task<string> BuildSubscriptionsAsync()
     {
-        var resp = await _ipc.RequestAsync("subscription.list");
         var sb = new StringBuilder();
         sb.AppendLine("Subscriptions");
         sb.AppendLine();
-        if (resp.TryGetProperty("payload", out var p))
+        try
         {
-            if (p.TryGetProperty("http_mode", out var hm))
-                sb.AppendLine($"HTTP mode: {hm.GetString()}");
-            if (p.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array)
+            // NP-INTEGRATION-003:
+            // subscription.add → update(body) → decode/parse → ProxyProfile → engine → proxy.list
+            var addPayload = JsonSerializer.SerializeToElement(new
             {
-                if (items.GetArrayLength() == 0)
-                    sb.AppendLine("(none — subscription.add)");
+                id = "demo-sub",
+                name = "Demo Subscription",
+                url = "https://example.com/netpilot-demo-sub"
+            });
+            var add = await _ipc.RequestAsync("subscription.add", addPayload);
+            AppendIpcResult(sb, "subscription.add", add);
+
+            // Sample URI list body (offline path; same pipeline as HTTP fetch).
+            var bodyText =
+                "trojan://pass@node1.example.com:443?security=tls#Sub-HK-1\n" +
+                "ss://YWVzLTI1Ni1nY206cGFzcw@node2.example.com:8388#Sub-SS-1\n";
+            var updatePayload = JsonSerializer.SerializeToElement(new
+            {
+                id = "demo-sub",
+                body = bodyText
+            });
+            var update = await _ipc.RequestAsync("subscription.update", updatePayload);
+            AppendIpcResult(sb, "subscription.update", update);
+
+            var list = await _ipc.RequestAsync("subscription.list");
+            AppendIpcResult(sb, "subscription.list", list);
+
+            var proxies = await _ipc.RequestAsync("proxy.list");
+            AppendIpcResult(sb, "proxy.list (after sub)", proxies);
+            if (proxies.TryGetProperty("payload", out var pp)
+                && pp.TryGetProperty("items", out var items)
+                && items.ValueKind == JsonValueKind.Array)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"proxy nodes visible: {items.GetArrayLength()}");
                 foreach (var it in items.EnumerateArray())
                 {
                     var id = it.TryGetProperty("id", out var idv) ? idv.GetString() : "?";
-                    var name = it.TryGetProperty("name", out var n) ? n.GetString() : id;
-                    var url = it.TryGetProperty("url", out var u) ? u.GetString() : "";
-                    sb.AppendLine($"• {name} [{id}]");
-                    sb.AppendLine($"  {url}");
+                    var name = it.TryGetProperty("name", out var nv) ? nv.GetString() : id;
+                    var server = it.TryGetProperty("server", out var sv) ? sv.GetString() : "";
+                    var port = it.TryGetProperty("port", out var pv) ? pv.ToString() : "";
+                    var proto = it.TryGetProperty("protocol", out var pr) ? pr.GetString() : "";
+                    sb.AppendLine($"• {name} [{id}] {proto} {server}:{port}");
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            sb.AppendLine($"IPC error: {ex.Message}");
         }
         return sb.ToString();
     }
